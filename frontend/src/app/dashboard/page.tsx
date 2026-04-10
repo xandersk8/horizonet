@@ -9,6 +9,8 @@ import { LogOut, Play, Square, Navigation, Settings, Clock, Fuel, Map, LocateFix
 import { formatDuration, estimateFuel, calculateDistance } from '@/lib/tripUtils';
 import Link from 'next/link';
 import DestinationSearch from '@/components/DestinationSearch';
+import Sidebar from '@/components/Sidebar';
+import { Menu } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +20,7 @@ export default function Dashboard() {
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [estimateToDest, setEstimateToDest] = useState<{ dist: number, time: number } | null>(null);
     const [autoCenter, setAutoCenter] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -54,18 +57,19 @@ export default function Dashboard() {
         return () => clearInterval(timer);
     }, [isTracking, startTime]);
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
-    };
-
     if (!user) return <div className="loading">Carregando...</div>;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative' }}>
-            {/* Header with Search */}
+            <Sidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                userEmail={user.email}
+            />
+
+            {/* Clean Header */}
             <header style={{
-                margin: '16px',
+                padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
@@ -75,40 +79,33 @@ export default function Dashboard() {
                 right: 0,
                 zIndex: 1000,
             }}>
-                <div className="glass-morphism" style={{
-                    padding: '12px 20px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '10px',
-                            background: 'var(--primary)',
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="glass-morphism"
+                        style={{
+                            width: '44px',
+                            height: '44px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <Navigation size={24} color="white" />
-                        </div>
-                        <div>
-                            <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Dashboard</h2>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                        <Link href="/settings" style={{ color: 'var(--text-muted)' }}>
-                            <Settings size={20} />
-                        </Link>
-                        <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                            <LogOut size={20} />
-                        </button>
-                    </div>
-                </div>
+                            justifyContent: 'center',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'white'
+                        }}
+                    >
+                        <Menu size={24} />
+                    </button>
 
-                <div className="glass-morphism" style={{ padding: '12px' }}>
-                    <DestinationSearch onSelect={setDestination} />
+                    <div className="glass-morphism" style={{
+                        flex: 1,
+                        padding: '0 12px',
+                        height: '44px',
+                        display: 'flex',
+                        alignItems: 'center'
+                    }}>
+                        <DestinationSearch onSelect={setDestination} />
+                    </div>
                 </div>
             </header>
 
