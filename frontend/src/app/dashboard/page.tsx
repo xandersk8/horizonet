@@ -112,8 +112,31 @@ export default function Dashboard() {
             </header>
 
             {/* Main Map */}
-            <main style={{ flex: 1, position: 'relative' }}>
-                <MapWrapper path={path} currentLocation={currentLocation} destination={destination} />
+            <main style={{ flex: 1, position: 'relative' }} onMouseDown={() => setAutoCenter(false)} onTouchStart={() => setAutoCenter(false)}>
+                <MapWrapper path={path} currentLocation={currentLocation} destination={destination} autoCenter={autoCenter} />
+
+                {/* AutoCenter Button */}
+                <button
+                    onClick={() => setAutoCenter(true)}
+                    className="glass-morphism"
+                    style={{
+                        position: 'absolute',
+                        right: '16px',
+                        bottom: '100px',
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: autoCenter ? 'var(--primary)' : 'var(--text-muted)',
+                        border: autoCenter ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
+                        zIndex: 1000,
+                        cursor: 'pointer'
+                    }}
+                >
+                    <LocateFixed size={24} />
+                </button>
             </main>
 
             {/* Controls */}

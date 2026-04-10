@@ -11,17 +11,18 @@ interface MapWrapperProps {
     path: LocationPoint[];
     currentLocation?: LocationPoint | null;
     destination?: LocationPoint | null;
+    autoCenter?: boolean;
 }
 
-export default function MapWrapper({ path, currentLocation, destination }: MapWrapperProps) {
+export default function MapWrapper({ path, currentLocation, destination, autoCenter = true }: MapWrapperProps) {
     const { mapProvider, googleMapsKey, mapTheme } = useSettings();
 
     return (
         <div style={{ height: '100%', width: '100%' }}>
             {mapProvider === 'google' ? (
-                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} destination={destination} theme={mapTheme} />
+                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} destination={destination} theme={mapTheme} autoCenter={autoCenter} />
             ) : (
-                <LeafletMap path={path} currentLocation={currentLocation} destination={destination} theme={mapTheme} />
+                <LeafletMap path={path} currentLocation={currentLocation} destination={destination} theme={mapTheme} autoCenter={autoCenter} />
             )}
         </div>
     );

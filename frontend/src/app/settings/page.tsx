@@ -19,7 +19,7 @@ export default function SettingsPage() {
 
     const handleSave = async () => {
         setSaving(true);
-        await setSettings(localProvider, localKey);
+        await setSettings(localProvider, localKey, localTheme);
         setSaving(false);
         router.back();
     };
