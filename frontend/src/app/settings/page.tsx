@@ -2,20 +2,22 @@
 
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Map, Database, Key, Save } from 'lucide-react';
+import { ChevronLeft, Map, Database, Key, Save, Sun, Moon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
-    const { mapProvider, googleMapsKey, setSettings, loading } = useSettings();
+    const { mapProvider, googleMapsKey, mapTheme, setSettings, loading } = useSettings();
     const [localKey, setLocalKey] = useState(googleMapsKey);
     const [localProvider, setLocalProvider] = useState(mapProvider);
+    const [localTheme, setLocalTheme] = useState(mapTheme);
     const [saving, setSaving] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
         setLocalKey(googleMapsKey);
         setLocalProvider(mapProvider);
-    }, [googleMapsKey, mapProvider]);
+        setLocalTheme(mapTheme);
+    }, [googleMapsKey, mapProvider, mapTheme]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -77,6 +79,48 @@ export default function SettingsPage() {
                     >
                         <span>Leaflet (Open Source)</span>
                         {localProvider === 'leaflet' && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />}
+                    </button>
+                </div>
+            </section>
+
+            <section className="glass-morphism" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Sun size={24} color="var(--primary)" />
+                    <h2 style={{ fontSize: '1.2rem' }}>Tema do Mapa</h2>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                        onClick={() => setLocalTheme('light')}
+                        className={`input-field`}
+                        style={{
+                            flex: 1,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            gap: '8px',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            background: localTheme === 'light' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                            border: localTheme === 'light' ? '1px solid var(--primary)' : '1px solid var(--glass-border)'
+                        }}
+                    >
+                        <Sun size={18} /> Claro
+                    </button>
+                    <button
+                        onClick={() => setLocalTheme('dark')}
+                        className={`input-field`}
+                        style={{
+                            flex: 1,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            gap: '8px',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            background: localTheme === 'dark' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                            border: localTheme === 'dark' ? '1px solid var(--primary)' : '1px solid var(--glass-border)'
+                        }}
+                    >
+                        <Moon size={18} /> Escuro
                     </button>
                 </div>
             </section>
