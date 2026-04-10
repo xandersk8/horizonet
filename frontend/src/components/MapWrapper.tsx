@@ -13,7 +13,7 @@ interface MapWrapperProps {
     destination?: LocationPoint | null;
 }
 
-export default function MapWrapper({ path, currentLocation }: MapWrapperProps) {
+export default function MapWrapper({ path, currentLocation, destination }: MapWrapperProps) {
     const { mapProvider, googleMapsKey } = useSettings();
 
     return (
