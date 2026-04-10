@@ -7,9 +7,15 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const server = http.createServer(app);
+
+const allowedOrigins = [
+    "http://localhost:3000",
+    process.env.CLIENT_URL
+].filter(Boolean);
+
 const io = new Server(server, {
     cors: {
-        origin: "*", // Adjust for production
+        origin: allowedOrigins.length > 0 ? allowedOrigins : "*",
         methods: ["GET", "POST"]
     }
 });
@@ -19,7 +25,9 @@ const supabase = createClient(
     process.env.SUPABASE_ANON_KEY
 );
 
-app.use(cors());
+app.use(cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : "*"
+}));
 app.use(express.json());
 
 const trackerRoutes = require('./routes/tracker');

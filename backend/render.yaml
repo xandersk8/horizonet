@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: horizonet-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 18.x
+      - key: SUPABASE_URL
+        fromContext: env
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        fromContext: env
+      - key: PORT
+        value: 3001
+      - key: CLIENT_URL
+        value: https://horizonet-frontend.vercel.app # Altere para a sua URL real do Vercel
