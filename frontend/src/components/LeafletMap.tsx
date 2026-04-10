@@ -19,6 +19,8 @@ interface MapProps {
     path: LocationPoint[];
     currentLocation?: LocationPoint | null;
     destination?: LocationPoint | null;
+    theme?: 'light' | 'dark';
+    autoCenter?: boolean;
 }
 
 const DestIcon = L.icon({

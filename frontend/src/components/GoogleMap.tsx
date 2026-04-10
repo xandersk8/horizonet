@@ -9,6 +9,7 @@ interface MapProps {
     currentLocation?: LocationPoint | null;
     destination?: LocationPoint | null;
     theme?: 'light' | 'dark';
+    autoCenter?: boolean;
 }
 
 const containerStyle = {
@@ -16,11 +17,13 @@ const containerStyle = {
     height: '100%'
 };
 
-export default function Map({ path, apiKey, currentLocation }: MapProps) {
+export default function Map({ path, apiKey, currentLocation, theme, autoCenter = true }: MapProps) {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
     });
+
+    const [map, setMap] = useState<google.maps.Map | null>(null);
 
     const center = path.length > 0
         ? { lat: path[path.length - 1].latitude, lng: path[path.length - 1].longitude }
@@ -28,11 +31,18 @@ export default function Map({ path, apiKey, currentLocation }: MapProps) {
             ? { lat: currentLocation.latitude, lng: currentLocation.longitude }
             : { lat: -23.55052, lng: -46.633308 }; // Default to São Paulo
 
+    useEffect(() => {
+        if (map && center && autoCenter) {
+            map.panTo(center);
+        }
+    }, [map, center, autoCenter]);
+
     return isLoaded ? (
         <GoogleMap
             mapContainerStyle={containerStyle}
             center={center}
             zoom={15}
+            onLoad={(map) => setMap(map)}
             options={{
                 styles: [
                     {
