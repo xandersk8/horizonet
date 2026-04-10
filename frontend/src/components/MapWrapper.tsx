@@ -12,12 +12,12 @@ interface MapWrapperProps {
 }
 
 export default function MapWrapper({ path }: MapWrapperProps) {
-    const { mapProvider } = useSettings();
+    const { mapProvider, googleMapsKey } = useSettings();
 
     return (
         <div style={{ height: '100%', width: '100%' }}>
             {mapProvider === 'google' ? (
-                <GoogleMap path={path} />
+                <GoogleMap path={path} apiKey={googleMapsKey} />
             ) : (
                 <LeafletMap path={path} />
             )}

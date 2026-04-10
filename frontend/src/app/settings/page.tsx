@@ -2,14 +2,32 @@
 
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Map, Database } from 'lucide-react';
+import { ChevronLeft, Map, Database, Key, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
-    const { mapProvider, setMapProvider } = useSettings();
+    const { mapProvider, googleMapsKey, setSettings, loading } = useSettings();
+    const [localKey, setLocalKey] = useState(googleMapsKey);
+    const [localProvider, setLocalProvider] = useState(mapProvider);
+    const [saving, setSaving] = useState(false);
     const router = useRouter();
 
+    useEffect(() => {
+        setLocalKey(googleMapsKey);
+        setLocalProvider(mapProvider);
+    }, [googleMapsKey, mapProvider]);
+
+    const handleSave = async () => {
+        setSaving(true);
+        await setSettings(localProvider, localKey);
+        setSaving(false);
+        router.back();
+    };
+
+    if (loading) return <div style={{ padding: '24px', color: 'var(--text-muted)' }}>Carregando...</div>;
+
     return (
-        <div style={{ padding: '24px', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ padding: '24px', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '600px', margin: '0 auto' }}>
             <header style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <button
                     onClick={() => router.back()}
@@ -26,60 +44,77 @@ export default function SettingsPage() {
                     <h2 style={{ fontSize: '1.2rem' }}>Provedor de Mapa</h2>
                 </div>
 
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Escolha qual serviço de mapas você deseja utilizar para visualizar suas rotas.
-                </p>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <button
-                        onClick={() => setMapProvider('google')}
-                        className={`input-field ${mapProvider === 'google' ? 'active-provider' : ''}`}
+                        onClick={() => setLocalProvider('google')}
+                        className={`input-field ${localProvider === 'google' ? 'active-provider' : ''}`}
                         style={{
                             textAlign: 'left',
                             cursor: 'pointer',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            border: mapProvider === 'google' ? '1px solid var(--primary)' : '1px solid var(--glass-border)'
+                            background: localProvider === 'google' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                            border: localProvider === 'google' ? '1px solid var(--primary)' : '1px solid var(--glass-border)'
                         }}
                     >
                         <span>Google Maps</span>
-                        {mapProvider === 'google' && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />}
+                        {localProvider === 'google' && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />}
                     </button>
 
                     <button
-                        onClick={() => setMapProvider('leaflet')}
-                        className={`input-field ${mapProvider === 'leaflet' ? 'active-provider' : ''}`}
+                        onClick={() => setLocalProvider('leaflet')}
+                        className={`input-field ${localProvider === 'leaflet' ? 'active-provider' : ''}`}
                         style={{
                             textAlign: 'left',
                             cursor: 'pointer',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            border: mapProvider === 'leaflet' ? '1px solid var(--primary)' : '1px solid var(--glass-border)'
+                            background: localProvider === 'leaflet' ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+                            border: localProvider === 'leaflet' ? '1px solid var(--primary)' : '1px solid var(--glass-border)'
                         }}
                     >
                         <span>Leaflet (Open Source)</span>
-                        {mapProvider === 'leaflet' && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />}
+                        {localProvider === 'leaflet' && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />}
                     </button>
                 </div>
             </section>
 
-            <section className="glass-morphism" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <section className="glass-morphism" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Database size={24} color="var(--secondary)" />
-                    <h2 style={{ fontSize: '1.2rem' }}>Dados</h2>
+                    <Key size={24} color="var(--secondary)" />
+                    <h2 style={{ fontSize: '1.2rem' }}>Chave de API</h2>
                 </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Suas rotas são sincronizadas em tempo real com o Supabase.
+
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    Sua chave pessoal para o Google Maps. Ela não será compartilhada com ninguém.
                 </p>
+
+                <input
+                    type="password"
+                    placeholder="Sua Google Maps API Key"
+                    value={localKey}
+                    onChange={(e) => setLocalKey(e.target.value)}
+                    className="input-field"
+                    style={{ width: '100%' }}
+                />
             </section>
 
-            <style jsx>{`
-        .active-provider {
-          background: rgba(99, 102, 241, 0.1) !important;
-        }
-      `}</style>
+            <button
+                onClick={handleSave}
+                disabled={saving}
+                className="btn-primary"
+                style={{
+                    marginTop: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                }}
+            >
+                <Save size={20} /> {saving ? 'Salvando...' : 'Salvar Configurações'}
+            </button>
         </div>
     );
 }

@@ -5,6 +5,7 @@ import { LocationPoint } from '@/hooks/useTracker';
 
 interface MapProps {
     path: LocationPoint[];
+    apiKey?: string;
 }
 
 const containerStyle = {
@@ -12,10 +13,10 @@ const containerStyle = {
     height: '100%'
 };
 
-export default function Map({ path }: MapProps) {
+export default function Map({ path, apiKey }: MapProps) {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+        googleMapsApiKey: apiKey || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
     });
 
     const center = path.length > 0
