@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, MapPin, X } from 'lucide-react';
+import { Search, MapPin, X, Navigation } from 'lucide-react';
 import { LocationPoint } from '@/hooks/useTracker';
 
 interface SearchResult {
@@ -15,7 +15,6 @@ interface DestinationSearchProps {
 }
 
 export default function DestinationSearch({ onSelect }: DestinationSearchProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -53,7 +52,6 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
         setSelectedName(result.display_name);
         setResults([]);
         setQuery('');
-        setIsExpanded(false);
     };
 
     const clear = () => {
@@ -61,111 +59,114 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
         setSelectedName('');
         setQuery('');
         setResults([]);
-        setIsExpanded(false);
     };
 
     return (
-        <div style={{ position: 'relative', width: '100%', display: 'flex' }}>
+        <div style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column' }}>
             <div className="search-container" style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
                 width: '100%',
-                background: 'rgba(15, 23, 42, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '12px',
-                padding: '0 12px',
-                height: '40px',
-                backdropFilter: 'blur(16px)',
-                transition: 'all 0.3s ease'
+                background: '#ffffff',
+                borderRadius: '24px',
+                padding: '0 16px',
+                height: '48px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                transition: 'all 0.3s ease',
+                color: '#202124'
             }}>
-                <Search size={18} style={{ color: 'rgba(255,255,255,0.6)', flexShrink: 0 }} />
                 {selectedName ? (
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px',
+                        gap: '12px',
                         width: '100%',
                         overflow: 'hidden'
                     }}>
+                        <MapPin size={20} color="#6366f1" style={{ flexShrink: 0 }} />
                         <span style={{
-                            fontSize: '0.9rem',
+                            fontSize: '0.95rem',
                             whiteSpace: 'nowrap',
                             textOverflow: 'ellipsis',
                             overflow: 'hidden',
                             flex: 1,
-                            color: 'white'
+                            color: '#202124',
+                            fontWeight: 500
                         }}>
                             {selectedName}
                         </span>
-                        <button onClick={clear} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px' }}>
-                            <X size={18} />
+                        <button onClick={clear} style={{ background: 'none', border: 'none', color: '#70757a', cursor: 'pointer', padding: '4px' }}>
+                            <X size={20} />
                         </button>
                     </div>
                 ) : (
-                    <input
-                        type="text"
-                        placeholder="Pesquisar destino..."
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'white',
-                            outline: 'none',
-                            width: '100%',
-                            fontSize: '0.9rem'
-                        }}
-                    />
+                    <>
+                        <input
+                            type="text"
+                            placeholder="Pesquise no Horizonet"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#202124',
+                                outline: 'none',
+                                width: '100%',
+                                fontSize: '1rem',
+                                paddingLeft: '4px'
+                            }}
+                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: '1px solid #e8eaed', paddingLeft: '12px', marginLeft: '8px' }}>
+                            <Search size={20} style={{ color: '#70757a', cursor: 'pointer' }} />
+                            <Navigation size={20} style={{ color: '#1a73e8', cursor: 'pointer' }} />
+                        </div>
+                    </>
                 )}
             </div>
 
-            {results.length > 0 && isExpanded && (
-                <div className="glass-morphism" style={{
+            {results.length > 0 && (
+                <div style={{
                     position: 'absolute',
-                    top: '52px',
+                    top: '56px',
                     left: 0,
                     right: 0,
                     zIndex: 2000,
-                    maxHeight: '260px',
+                    maxHeight: '300px',
                     overflowY: 'auto',
+                    background: 'white',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     padding: '8px',
-                    animation: 'slideDown 0.2s ease-out',
-                    border: '1px solid rgba(255,255,255,0.1)'
+                    animation: 'slideDown 0.2s ease-out'
                 }}>
-                    {results.map((r, i) => (
+                    {results.map((r: SearchResult, i: number) => (
                         <div
                             key={i}
                             onClick={() => handleSelect(r)}
                             style={{
-                                padding: '12px 16px',
+                                padding: '14px 16px',
                                 cursor: 'pointer',
-                                fontSize: '0.85rem',
-                                borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                fontSize: '0.9rem',
+                                borderBottom: i < results.length - 1 ? '1px solid #f1f3f4' : 'none',
                                 borderRadius: '8px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '12px',
+                                gap: '16px',
                                 transition: 'background 0.2s',
-                                color: 'white'
+                                color: '#3c4043'
                             }}
                             className="search-result-item"
                         >
-                            <MapPin size={16} color="rgba(255,255,255,0.4)" />
+                            <MapPin size={18} color="#dadce0" />
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.display_name}</span>
                         </div>
                     ))}
-                    {loading && (
-                        <div style={{ padding: '12px', textAlign: 'center', fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
-                            Buscando...
-                        </div>
-                    )}
                 </div>
             )}
 
             <style jsx>{`
                 .search-result-item:hover {
-                    background: rgba(255, 255, 255, 0.1);
+                    background: #f1f3f4;
                 }
                 @keyframes slideDown {
                     from { opacity: 0; transform: translateY(-10px); }
