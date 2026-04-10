@@ -37,7 +37,7 @@ function ChangeView({ center }: { center: [number, number] }) {
     return null;
 }
 
-export default function LeafletMap({ path, currentLocation }: MapProps) {
+export default function LeafletMap({ path, currentLocation, destination }: MapProps) {
     const center: [number, number] = path.length > 0
         ? [path[path.length - 1].latitude, path[path.length - 1].longitude]
         : currentLocation
@@ -63,6 +63,12 @@ export default function LeafletMap({ path, currentLocation }: MapProps) {
                     pathOptions={{ color: '#6366f1', weight: 4 }}
                 />
                 <ChangeView center={center} />
+
+                {/* Marker da Posição Atual */}
+                {(path.length > 0 || currentLocation) && (
+                    <Marker position={currentLocation ? [currentLocation.latitude, currentLocation.longitude] : center} icon={DefaultIcon} />
+                )}
+
                 {/* Marker do Destino */}
                 {destination && (
                     <Marker position={[destination.latitude, destination.longitude]} icon={DestIcon} />
