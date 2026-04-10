@@ -101,9 +101,13 @@ export default function Dashboard() {
                     height: '48px',
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '0 4px'
+                    padding: '0 4px',
+                    minWidth: 0 // Prevent flex items from overflowing
                 }}>
-                    <DestinationSearch onSelect={setDestination} />
+                    <DestinationSearch onSelect={(point) => {
+                        setDestination(point);
+                        if (point) setAutoCenter(false);
+                    }} />
                 </div>
             </header>
 
@@ -116,55 +120,56 @@ export default function Dashboard() {
             <div style={{
                 position: 'absolute',
                 bottom: '24px',
-                left: '16px',
-                right: '16px',
+                left: '12px',
+                right: '12px',
                 zIndex: 1000,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'flex-end',
-                pointerEvents: 'none'
+                pointerEvents: 'none',
+                gap: '10px'
             }}>
-                {/* Stats Bubble (Left) */}
+                {/* Stats Bubble (Left) - More compact for mobile */}
                 <div className="glass-morphism" style={{
-                    padding: '12px 16px',
+                    padding: '10px 14px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '4px',
-                    minWidth: '120px',
+                    maxWidth: '45%',
                     pointerEvents: 'auto'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Navigation size={14} color="var(--primary)" />
-                        <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {estimateToDest ? estimateToDest.dist.toFixed(1) + ' km' : distance.toFixed(1) + ' km'}
                         </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Clock size={14} color="var(--secondary)" />
-                        <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
                             {estimateToDest ? formatDuration(estimateToDest.time) : formatDuration(elapsedSeconds)}
                         </span>
                     </div>
                 </div>
 
                 {/* Tracking Controls (Right) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', pointerEvents: 'auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', pointerEvents: 'auto' }}>
                     {/* AutoCenter Button */}
                     <button
                         onClick={() => setAutoCenter(true)}
                         className="glass-morphism"
                         style={{
-                            width: '44px',
-                            height: '44px',
+                            width: '42px',
+                            height: '42px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: autoCenter ? 'var(--primary)' : 'var(--text-muted)',
-                            border: autoCenter ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
+                            border: autoCenter ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
                             cursor: 'pointer'
                         }}
                     >
-                        <LocateFixed size={22} />
+                        <LocateFixed size={20} />
                     </button>
 
                     {/* Start/Stop FAB */}
