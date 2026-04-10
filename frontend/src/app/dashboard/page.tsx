@@ -235,8 +235,8 @@ export default function Dashboard() {
           background: var(--background);
         }
         .stat-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 10px;
             display: flex;

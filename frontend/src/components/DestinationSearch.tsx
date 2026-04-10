@@ -72,14 +72,14 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
                 gap: '8px',
                 width: isExpanded || selectedName ? '100%' : '44px',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                background: isExpanded || selectedName ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: isExpanded || selectedName ? 'rgba(15, 23, 42, 0.8)' : 'rgba(15, 23, 42, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '22px',
                 padding: '4px',
                 overflow: 'hidden',
                 justifyContent: isExpanded || selectedName ? 'flex-start' : 'center',
                 height: '44px',
-                backdropFilter: 'blur(10px)'
+                backdropFilter: 'blur(16px)'
             }}>
                 {selectedName ? (
                     <div style={{

@@ -28,7 +28,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
             // Quick load from localStorage for better UX
             const localProvider = localStorage.getItem('map_provider') as MapProvider;
+            const localTheme = localStorage.getItem('map_theme') as MapTheme;
             if (localProvider) setMapProvider(localProvider);
+            if (localTheme) setMapTheme(localTheme);
 
             try {
                 const { data: { user } } = await supabase.auth.getUser();
@@ -43,7 +45,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                     if (data) {
                         const key = data.google_maps_key || '';
                         const savedProvider = data.map_provider as MapProvider;
+                        const savedTheme = data.map_theme as MapTheme;
+
                         setGoogleMapsKey(key);
+                        if (savedTheme) setMapTheme(savedTheme);
 
                         // If user has key, use their saved provider. 
                         // If no key, always force leaflet.
@@ -63,11 +68,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         loadSettings();
     }, []);
 
-    const updateSettings = async (provider: MapProvider, key: string) => {
+    const updateSettings = async (provider: MapProvider, key: string, theme: MapTheme) => {
         try {
             setMapProvider(provider);
             setGoogleMapsKey(key);
+            setMapTheme(theme);
+
             localStorage.setItem('map_provider', provider);
+            localStorage.setItem('map_theme', theme);
 
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -77,6 +85,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                         user_id: user.id,
                         map_provider: provider,
                         google_maps_key: key,
+                        map_theme: theme,
                         updated_at: new Date().toISOString()
                     });
 
