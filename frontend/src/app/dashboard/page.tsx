@@ -5,14 +5,16 @@ import { useTracker } from '@/hooks/useTracker';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Play, Square, Navigation, Settings } from 'lucide-react';
+import { LogOut, Play, Square, Navigation, Settings, Clock, Fuel } from 'lucide-react';
+import { formatDuration, estimateFuel } from '@/lib/tripUtils';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
 export default function Dashboard() {
-    const { isTracking, path, startTrip, stopTrip, tripId } = useTracker();
+    const { isTracking, path, distance, startTime, startTrip, stopTrip, tripId } = useTracker();
     const [user, setUser] = useState<any>(null);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const router = useRouter();
 
     useEffect(() => {
@@ -23,6 +25,18 @@ export default function Dashboard() {
         };
         checkUser();
     }, [router]);
+
+    useEffect(() => {
+        let timer: any;
+        if (isTracking && startTime) {
+            timer = setInterval(() => {
+                setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
+            }, 1000);
+        } else {
+            setElapsedSeconds(0);
+        }
+        return () => clearInterval(timer);
+    }, [isTracking, startTime]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -81,7 +95,7 @@ export default function Dashboard() {
             {/* Controls */}
             <footer className="glass-morphism" style={{
                 margin: '16px',
-                padding: '24px',
+                padding: '20px 24px',
                 position: 'absolute',
                 bottom: 0,
                 left: 0,
@@ -89,32 +103,50 @@ export default function Dashboard() {
                 zIndex: 1000,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '20px'
+                gap: '16px'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '4px' }}>Distância Percorrida</p>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>0.00 km</h3>
+                {/* Stats Grid */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '10px',
+                    textAlign: 'center'
+                }}>
+                    <div className="stat-card">
+                        <Navigation size={18} color="var(--primary)" style={{ marginBottom: '4px' }} />
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Distância</p>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>{distance.toFixed(2)} km</h4>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '4px' }}>Status</p>
-                        <p style={{
-                            color: isTracking ? '#22c55e' : 'var(--text-muted)',
-                            fontWeight: '600',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                        }}>
-                            <span style={{
-                                width: '8px',
-                                height: '8px',
-                                borderRadius: '50%',
-                                backgroundColor: isTracking ? '#22c55e' : '#64748b',
-                                display: 'inline-block'
-                            }}></span>
-                            {isTracking ? 'Rastreando' : 'Parado'}
-                        </p>
+                    <div className="stat-card">
+                        <Clock size={18} color="var(--secondary)" style={{ marginBottom: '4px' }} />
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Tempo</p>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>{formatDuration(elapsedSeconds)}</h4>
                     </div>
+                    <div className="stat-card">
+                        <Fuel size={18} color="#22c55e" style={{ marginBottom: '4px' }} />
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Consumo</p>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>{estimateFuel(distance).toFixed(2)} L</h4>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <p style={{
+                        fontSize: '0.85rem',
+                        color: isTracking ? '#22c55e' : 'var(--text-muted)',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                    }}>
+                        <span style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            backgroundColor: isTracking ? '#22c55e' : '#64748b',
+                            display: 'inline-block'
+                        }}></span>
+                        {isTracking ? 'Rastreamento Ativo' : 'Pronto para iniciar'}
+                    </p>
                 </div>
 
                 {!isTracking ? (
@@ -145,6 +177,15 @@ export default function Dashboard() {
           align-items: center;
           justify-content: center;
           background: var(--background);
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
       `}} />
         </div>

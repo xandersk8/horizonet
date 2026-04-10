@@ -33,3 +33,19 @@ CREATE POLICY "Users can manage locations for their own trips" ON localizacoes
             AND viagens.user_id = auth.uid()
         )
     );
+
+-- Table: user_settings
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    google_maps_key TEXT,
+    map_provider TEXT DEFAULT 'google', -- 'google' ou 'leaflet'
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS for user_settings
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own settings" ON user_settings
+    FOR ALL USING (auth.uid() = user_id);
+

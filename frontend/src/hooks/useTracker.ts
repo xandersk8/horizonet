@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { socket } from '@/lib/socket';
+import { calculateDistance } from '@/lib/tripUtils';
 
 export interface LocationPoint {
     latitude: number;
@@ -14,6 +15,8 @@ export function useTracker() {
     const [tripId, setTripId] = useState<string | null>(null);
     const [isTracking, setIsTracking] = useState(false);
     const [path, setPath] = useState<LocationPoint[]>([]);
+    const [distance, setDistance] = useState(0);
+    const [startTime, setStartTime] = useState<number | null>(null);
     const watchIdRef = useRef<number | null>(null);
     const pendingLocationsRef = useRef<LocationPoint[]>([]);
 
@@ -57,6 +60,8 @@ export function useTracker() {
             setTripId(data.id);
             setIsTracking(true);
             setPath([]);
+            setDistance(0);
+            setStartTime(Date.now());
             socket.connect();
             socket.emit('join-trip', data.id);
         } catch (err) {
@@ -75,12 +80,26 @@ export function useTracker() {
 
         // Load persisted path on mount
         const savedPath = localStorage.getItem('current_trip_path');
-        if (savedPath) setPath(JSON.parse(savedPath));
+        if (savedPath) {
+            const parsedPath = JSON.parse(savedPath);
+            setPath(parsedPath);
+            // Recalculate total distance
+            let dist = 0;
+            for (let i = 1; i < parsedPath.length; i++) {
+                dist += calculateDistance(
+                    parsedPath[i - 1].latitude, parsedPath[i - 1].longitude,
+                    parsedPath[i].latitude, parsedPath[i].longitude
+                );
+            }
+            setDistance(dist);
+        }
 
         const savedTripId = localStorage.getItem('current_trip_id');
+        const savedStart = localStorage.getItem('current_trip_start');
         if (savedTripId) {
             setTripId(savedTripId);
             setIsTracking(true);
+            if (savedStart) setStartTime(Number(savedStart));
             socket.connect();
             socket.emit('join-trip', savedTripId);
         }
@@ -104,14 +123,16 @@ export function useTracker() {
             setIsTracking(false);
             setTripId(null);
             setPath([]);
+            setDistance(0);
+            setStartTime(null);
             socket.disconnect();
 
             // Clear persistence
             localStorage.removeItem('current_trip_id');
             localStorage.removeItem('current_trip_path');
+            localStorage.removeItem('current_trip_start');
         } catch (err) {
             console.error('Error stopping trip:', err);
-            // Fallback: stop UI even if backend fails
             setIsTracking(false);
             setTripId(null);
         }
@@ -121,7 +142,10 @@ export function useTracker() {
         if (path.length > 0) {
             localStorage.setItem('current_trip_path', JSON.stringify(path));
         }
-    }, [path]);
+        if (startTime) {
+            localStorage.setItem('current_trip_start', startTime.toString());
+        }
+    }, [path, startTime]);
 
     useEffect(() => {
         if (tripId) {
@@ -129,6 +153,7 @@ export function useTracker() {
         } else {
             localStorage.removeItem('current_trip_id');
             localStorage.removeItem('current_trip_path');
+            localStorage.removeItem('current_trip_start');
         }
     }, [tripId]);
 
@@ -142,15 +167,21 @@ export function useTracker() {
                         timestamp: new Date().toISOString()
                     };
 
-                    setPath(prev => [...prev, newPoint]);
+                    setPath(prev => {
+                        if (prev.length > 0) {
+                            const lastPoint = prev[prev.length - 1];
+                            const d = calculateDistance(
+                                lastPoint.latitude, lastPoint.longitude,
+                                newPoint.latitude, newPoint.longitude
+                            );
+                            setDistance(old => old + d);
+                        }
+                        return [...prev, newPoint];
+                    });
 
-                    // Emit to socket
                     socket.emit('location-update', { tripId, ...newPoint });
-
-                    // Add to pending for persistence
                     pendingLocationsRef.current.push(newPoint);
 
-                    // Batch sync every 5 points or every 15 seconds (simplification)
                     if (pendingLocationsRef.current.length >= 5) {
                         syncLocations([...pendingLocationsRef.current]);
                     }
@@ -165,5 +196,5 @@ export function useTracker() {
         };
     }, [isTracking, tripId]);
 
-    return { isTracking, path, startTrip, stopTrip, tripId };
+    return { isTracking, path, distance, startTime, startTrip, stopTrip, tripId };
 }

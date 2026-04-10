@@ -32,13 +32,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
                     .single();
 
                 if (data) {
-                    setMapProvider(data.map_provider as MapProvider);
-                    setGoogleMapsKey(data.google_maps_key || '');
+                    const key = data.google_maps_key || '';
+                    setGoogleMapsKey(key);
+                    // If no key, force Leaflet even if saved as google
+                    setMapProvider(!key ? 'leaflet' : (data.map_provider as MapProvider || 'google'));
+                } else {
+                    setMapProvider('leaflet'); // Default for new users
                 }
             } else {
-                // Fallback to local if not logged in (mostly for initial load)
-                const saved = localStorage.getItem('map_provider') as MapProvider;
-                if (saved) setMapProvider(saved);
+                setLoading(false);
             }
             setLoading(false);
         }
