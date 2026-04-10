@@ -12,7 +12,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default function Dashboard() {
-    const { isTracking, path, distance, startTime, startTrip, stopTrip, tripId } = useTracker();
+    const { isTracking, path, distance, startTime, currentLocation, startTrip, stopTrip, tripId } = useTracker();
     const [user, setUser] = useState<any>(null);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const router = useRouter();
@@ -89,7 +89,7 @@ export default function Dashboard() {
 
             {/* Main Map */}
             <main style={{ flex: 1, position: 'relative' }}>
-                <MapWrapper path={path} />
+                <MapWrapper path={path} currentLocation={currentLocation} />
             </main>
 
             {/* Controls */}

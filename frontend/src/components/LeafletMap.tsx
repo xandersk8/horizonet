@@ -17,6 +17,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapProps {
     path: LocationPoint[];
+    currentLocation?: LocationPoint | null;
 }
 
 function ChangeView({ center }: { center: [number, number] }) {
@@ -27,10 +28,12 @@ function ChangeView({ center }: { center: [number, number] }) {
     return null;
 }
 
-export default function LeafletMap({ path }: MapProps) {
+export default function LeafletMap({ path, currentLocation }: MapProps) {
     const center: [number, number] = path.length > 0
         ? [path[path.length - 1].latitude, path[path.length - 1].longitude]
-        : [-23.55052, -46.633308];
+        : currentLocation
+            ? [currentLocation.latitude, currentLocation.longitude]
+            : [-23.55052, -46.633308];
 
     const polylinePath: [number, number][] = path.map(p => [p.latitude, p.longitude]);
 
@@ -51,8 +54,8 @@ export default function LeafletMap({ path }: MapProps) {
                     pathOptions={{ color: '#6366f1', weight: 4 }}
                 />
                 <ChangeView center={center} />
-                {path.length > 0 && (
-                    <Marker position={center} icon={DefaultIcon} />
+                {(path.length > 0 || currentLocation) && (
+                    <Marker position={currentLocation ? [currentLocation.latitude, currentLocation.longitude] : center} icon={DefaultIcon} />
                 )}
             </MapContainer>
         </div>

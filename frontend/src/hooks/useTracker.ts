@@ -17,7 +17,9 @@ export function useTracker() {
     const [path, setPath] = useState<LocationPoint[]>([]);
     const [distance, setDistance] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
+    const [currentLocation, setCurrentLocation] = useState<LocationPoint | null>(null);
     const watchIdRef = useRef<number | null>(null);
+    const tripWatchIdRef = useRef<number | null>(null);
     const pendingLocationsRef = useRef<LocationPoint[]>([]);
 
     // Sync pending locations to backend
@@ -25,6 +27,10 @@ export function useTracker() {
         if (!tripId || locations.length === 0) return;
 
         try {
+            const baseUrl = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+                ? process.env.NEXT_PUBLIC_BACKEND_URL
+                : 'https://sua-url-do-backend-no-render-ou-railway.com'; // Placeholder or env
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/locations`, {
                 method: 'POST',
                 headers: {
@@ -59,22 +65,51 @@ export function useTracker() {
             const data = await response.json();
             setTripId(data.id);
             setIsTracking(true);
-            setPath([]);
+            setPath(currentLocation ? [currentLocation] : []);
             setDistance(0);
             setStartTime(Date.now());
             socket.connect();
             socket.emit('join-trip', data.id);
         } catch (err) {
             console.error('Error starting trip:', err);
+            alert('Erro ao iniciar viagem. Verifique se o servidor backend está rodando em ' + process.env.NEXT_PUBLIC_BACKEND_URL);
         }
     };
 
     useEffect(() => {
-        // Request GPS permission on mount
+        // Continuous position watching for map centering
         if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                () => console.log("GPS Permission granted"),
-                (err) => console.error("GPS Permission denied", err)
+            watchIdRef.current = navigator.geolocation.watchPosition(
+                (position) => {
+                    const point = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        timestamp: new Date().toISOString()
+                    };
+                    setCurrentLocation(point);
+
+                    // If tracking, update path and distance
+                    if (isTracking && tripId) {
+                        setPath(prev => {
+                            if (prev.length > 0) {
+                                const lastPoint = prev[prev.length - 1];
+                                const d = calculateDistance(
+                                    lastPoint.latitude, lastPoint.longitude,
+                                    point.latitude, point.longitude
+                                );
+                                setDistance(old => old + d);
+                            }
+                            return [...prev, point];
+                        });
+                        socket.emit('location-update', { tripId, ...point });
+                        pendingLocationsRef.current.push(point);
+                        if (pendingLocationsRef.current.length >= 5) {
+                            syncLocations([...pendingLocationsRef.current]);
+                        }
+                    }
+                },
+                (err) => console.error("GPS Error", err),
+                { enableHighAccuracy: true }
             );
         }
 
@@ -83,7 +118,6 @@ export function useTracker() {
         if (savedPath) {
             const parsedPath = JSON.parse(savedPath);
             setPath(parsedPath);
-            // Recalculate total distance
             let dist = 0;
             for (let i = 1; i < parsedPath.length; i++) {
                 dist += calculateDistance(
@@ -103,7 +137,11 @@ export function useTracker() {
             socket.connect();
             socket.emit('join-trip', savedTripId);
         }
-    }, []);
+
+        return () => {
+            if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
+        };
+    }, [isTracking, tripId]);
 
     const stopTrip = async () => {
         if (!tripId) return;
@@ -116,10 +154,6 @@ export function useTracker() {
                 }
             });
 
-            if (watchIdRef.current !== null) {
-                navigator.geolocation.clearWatch(watchIdRef.current);
-                watchIdRef.current = null;
-            }
             setIsTracking(false);
             setTripId(null);
             setPath([]);
@@ -127,7 +161,6 @@ export function useTracker() {
             setStartTime(null);
             socket.disconnect();
 
-            // Clear persistence
             localStorage.removeItem('current_trip_id');
             localStorage.removeItem('current_trip_path');
             localStorage.removeItem('current_trip_start');
@@ -157,44 +190,5 @@ export function useTracker() {
         }
     }, [tripId]);
 
-    useEffect(() => {
-        if (isTracking && tripId) {
-            watchIdRef.current = navigator.geolocation.watchPosition(
-                (position) => {
-                    const newPoint: LocationPoint = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        timestamp: new Date().toISOString()
-                    };
-
-                    setPath(prev => {
-                        if (prev.length > 0) {
-                            const lastPoint = prev[prev.length - 1];
-                            const d = calculateDistance(
-                                lastPoint.latitude, lastPoint.longitude,
-                                newPoint.latitude, newPoint.longitude
-                            );
-                            setDistance(old => old + d);
-                        }
-                        return [...prev, newPoint];
-                    });
-
-                    socket.emit('location-update', { tripId, ...newPoint });
-                    pendingLocationsRef.current.push(newPoint);
-
-                    if (pendingLocationsRef.current.length >= 5) {
-                        syncLocations([...pendingLocationsRef.current]);
-                    }
-                },
-                (error) => console.error('GPS Error:', error),
-                { enableHighAccuracy: true }
-            );
-        }
-
-        return () => {
-            if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
-        };
-    }, [isTracking, tripId]);
-
-    return { isTracking, path, distance, startTime, startTrip, stopTrip, tripId };
+    return { isTracking, path, distance, startTime, currentLocation, startTrip, stopTrip, tripId };
 }

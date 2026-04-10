@@ -6,6 +6,7 @@ import { LocationPoint } from '@/hooks/useTracker';
 interface MapProps {
     path: LocationPoint[];
     apiKey?: string;
+    currentLocation?: LocationPoint | null;
 }
 
 const containerStyle = {
@@ -13,7 +14,7 @@ const containerStyle = {
     height: '100%'
 };
 
-export default function Map({ path, apiKey }: MapProps) {
+export default function Map({ path, apiKey, currentLocation }: MapProps) {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -21,7 +22,9 @@ export default function Map({ path, apiKey }: MapProps) {
 
     const center = path.length > 0
         ? { lat: path[path.length - 1].latitude, lng: path[path.length - 1].longitude }
-        : { lat: -23.55052, lng: -46.633308 }; // Default to São Paulo
+        : currentLocation
+            ? { lat: currentLocation.latitude, lng: currentLocation.longitude }
+            : { lat: -23.55052, lng: -46.633308 }; // Default to São Paulo
 
     return isLoaded ? (
         <GoogleMap
