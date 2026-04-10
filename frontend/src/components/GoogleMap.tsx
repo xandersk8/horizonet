@@ -18,7 +18,7 @@ const containerStyle = {
     height: '100%'
 };
 
-export default function Map({ path, apiKey, currentLocation, theme, autoCenter = true }: MapProps) {
+export default function Map({ path, apiKey, currentLocation, destination, theme, autoCenter = true }: MapProps) {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -38,6 +38,14 @@ export default function Map({ path, apiKey, currentLocation, theme, autoCenter =
         }
     }, [map, center, autoCenter]);
 
+    // Pan to destination when it's selected
+    useEffect(() => {
+        if (map && destination) {
+            map.panTo({ lat: destination.latitude, lng: destination.longitude });
+            map.setZoom(16);
+        }
+    }, [map, destination]);
+
     return isLoaded ? (
         <GoogleMap
             mapContainerStyle={containerStyle}
@@ -45,65 +53,59 @@ export default function Map({ path, apiKey, currentLocation, theme, autoCenter =
             zoom={15}
             onLoad={(map) => setMap(map)}
             options={{
-                styles: [
-                    {
-                        "elementType": "geometry",
-                        "stylers": [{ "color": "#212121" }]
-                    },
-                    {
-                        "elementType": "labels.icon",
-                        "stylers": [{ "visibility": "off" }]
-                    },
-                    {
-                        "elementType": "labels.text.fill",
-                        "stylers": [{ "color": "#757575" }]
-                    },
-                    {
-                        "elementType": "labels.text.stroke",
-                        "stylers": [{ "color": "#212121" }]
-                    },
-                    {
-                        "featureType": "administrative",
-                        "elementType": "geometry",
-                        "stylers": [{ "color": "#757575" }]
-                    },
-                    {
-                        "featureType": "road",
-                        "elementType": "geometry.fill",
-                        "stylers": [{ "color": "#2c2c2c" }]
-                    },
-                    {
-                        "featureType": "water",
-                        "elementType": "geometry",
-                        "stylers": [{ "color": "#000000" }]
-                    }
-                ],
+                styles: theme === 'dark' ? [
+                    { "elementType": "geometry", "stylers": [{ "color": "#212121" }] },
+                    { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+                    { "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
+                    { "elementType": "labels.text.stroke", "stylers": [{ "color": "#212121" }] },
+                    { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "color": "#757575" }] },
+                    { "featureType": "road", "elementType": "geometry.fill", "stylers": [{ "color": "#2c2c2c" }] },
+                    { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#000000" }] }
+                ] : [],
                 disableDefaultUI: true,
-                zoomControl: true,
+                zoomControl: false,
             }}
         >
             {path.length > 0 && (
-                <>
-                    <Polyline
-                        path={path.map(p => ({ lat: p.latitude, lng: p.longitude }))}
-                        options={{
-                            strokeColor: '#6366f1',
-                            strokeOpacity: 1.0,
-                            strokeWeight: 4,
-                        }}
-                    />
-                    <Marker
-                        position={{ lat: path[path.length - 1].latitude, lng: path[path.length - 1].longitude }}
-                        icon={typeof google !== 'undefined' ? {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: "#ec4899",
-                            fillOpacity: 1,
-                            strokeWeight: 2,
-                            strokeColor: "white",
-                        } : undefined}
-                    />
-                </>
+                <Polyline
+                    path={path.map(p => ({ lat: p.latitude, lng: p.longitude }))}
+                    options={{
+                        strokeColor: '#6366f1',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 4,
+                    }}
+                />
+            )}
+
+            {(path.length > 0 || currentLocation) && (
+                <Marker
+                    position={path.length > 0
+                        ? { lat: path[path.length - 1].latitude, lng: path[path.length - 1].longitude }
+                        : { lat: currentLocation!.latitude, lng: currentLocation!.longitude }
+                    }
+                    icon={typeof google !== 'undefined' ? {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: "#6366f1",
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: "white",
+                    } : undefined}
+                />
+            )}
+
+            {destination && (
+                <Marker
+                    position={{ lat: destination.latitude, lng: destination.longitude }}
+                    icon={typeof google !== 'undefined' ? {
+                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                        scale: 6,
+                        fillColor: "#ef4444",
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: "white",
+                    } : undefined}
+                />
             )}
         </GoogleMap>
     ) : <div style={{ background: '#0f172a', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Carregando Mapa...</div>;

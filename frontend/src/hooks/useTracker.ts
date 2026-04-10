@@ -77,6 +77,25 @@ export function useTracker() {
         }
     };
 
+    const getIPLocation = async () => {
+        try {
+            console.log("Attempting IP-based location fallback...");
+            const response = await fetch('https://ipapi.co/json/');
+            const data = await response.json();
+            if (data.latitude && data.longitude) {
+                const point = {
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    timestamp: new Date().toISOString()
+                };
+                setCurrentLocation(point);
+                console.log("IP-based location set:", point);
+            }
+        } catch (err) {
+            console.error("IP Location Fallback failed:", err);
+        }
+    };
+
     useEffect(() => {
         // Continuous position watching for map centering
         if ("geolocation" in navigator) {
@@ -117,10 +136,16 @@ export function useTracker() {
                     };
                     const msg = messages[err.code as keyof typeof messages] || "Erro desconhecido no GPS.";
                     console.error("GPS Error Code " + err.code + ": " + msg);
-                    // Don't alert on every check, maybe just once per session or console
+
+                    // Fallback to IP if GPS is not working
+                    if (err.code === 1 || err.code === 2) {
+                        getIPLocation();
+                    }
                 },
-                { enableHighAccuracy: true }
+                { enableHighAccuracy: true, timeout: 10000 }
             );
+        } else {
+            getIPLocation();
         }
 
         // Load persisted path on mount

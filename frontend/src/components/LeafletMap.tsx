@@ -31,13 +31,20 @@ const DestIcon = L.icon({
     className: 'destination-marker'
 });
 
-function ChangeView({ center, autoCenter }: { center: [number, number], autoCenter: boolean }) {
+function ChangeView({ center, destination, autoCenter }: { center: [number, number], destination?: [number, number] | null, autoCenter: boolean }) {
     const map = useMap();
     useEffect(() => {
         if (autoCenter) {
             map.setView(center, map.getZoom());
         }
     }, [center, map, autoCenter]);
+
+    useEffect(() => {
+        if (destination) {
+            map.flyTo(destination, 16);
+        }
+    }, [destination, map]);
+
     return null;
 }
 
@@ -69,7 +76,11 @@ export default function LeafletMap({ path, currentLocation, destination, theme =
                     positions={polylinePath}
                     pathOptions={{ color: '#6366f1', weight: 4 }}
                 />
-                <ChangeView center={center} autoCenter={autoCenter} />
+                <ChangeView
+                    center={center}
+                    destination={destination ? [destination.latitude, destination.longitude] : null}
+                    autoCenter={autoCenter}
+                />
 
                 {/* Marker da Posição Atual */}
                 {(path.length > 0 || currentLocation) && (

@@ -65,79 +65,58 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
     };
 
     return (
-        <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{
+        <div style={{ position: 'relative', width: '100%', display: 'flex' }}>
+            <div className="search-container" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                width: isExpanded || selectedName ? '100%' : '44px',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                background: isExpanded || selectedName ? 'rgba(15, 23, 42, 0.8)' : 'rgba(15, 23, 42, 0.4)',
+                width: '100%',
+                background: 'rgba(15, 23, 42, 0.4)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '22px',
-                padding: '4px',
-                overflow: 'hidden',
-                justifyContent: isExpanded || selectedName ? 'flex-start' : 'center',
-                height: '44px',
-                backdropFilter: 'blur(16px)'
+                borderRadius: '12px',
+                padding: '0 12px',
+                height: '40px',
+                backdropFilter: 'blur(16px)',
+                transition: 'all 0.3s ease'
             }}>
+                <Search size={18} style={{ color: 'rgba(255,255,255,0.6)', flexShrink: 0 }} />
                 {selectedName ? (
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '10px',
+                        gap: '8px',
                         width: '100%',
-                        padding: '0 12px'
+                        overflow: 'hidden'
                     }}>
-                        <MapPin size={20} color="var(--primary)" style={{ flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', flex: 1, color: 'white' }}>
+                        <span style={{
+                            fontSize: '0.9rem',
+                            whiteSpace: 'nowrap',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            flex: 1,
+                            color: 'white'
+                        }}>
                             {selectedName}
                         </span>
                         <button onClick={clear} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px' }}>
                             <X size={18} />
                         </button>
                     </div>
-                ) : isExpanded ? (
-                    <div style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '0 8px' }}>
-                        <Search size={20} style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
-                        <input
-                            type="text"
-                            placeholder="Pesquisar destino..."
-                            autoFocus
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'white',
-                                padding: '8px 12px',
-                                outline: 'none',
-                                width: '100%',
-                                fontSize: '0.9rem'
-                            }}
-                        />
-                        <button onClick={() => setIsExpanded(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
-                            <X size={18} />
-                        </button>
-                    </div>
                 ) : (
-                    <button
-                        onClick={() => setIsExpanded(true)}
+                    <input
+                        type="text"
+                        placeholder="Pesquisar destino..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
                         style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            background: 'transparent',
+                            background: 'none',
                             border: 'none',
-                            padding: 0
+                            color: 'white',
+                            outline: 'none',
+                            width: '100%',
+                            fontSize: '0.9rem'
                         }}
-                    >
-                        <Search size={20} color="white" />
-                    </button>
+                    />
                 )}
             </div>
 
