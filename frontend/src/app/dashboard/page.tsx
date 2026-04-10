@@ -60,28 +60,98 @@ export default function Dashboard() {
     if (!user) return <div className="loading">Carregando...</div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative', overflow: 'hidden' }}>
             <Sidebar
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
                 userEmail={user.email}
             />
 
-            {/* Clean Header */}
+            {/* Floating Top Header */}
             <header style={{
-                padding: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
                 position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
+                top: '12px',
+                left: '12px',
+                right: '12px',
                 zIndex: 1000,
+                display: 'flex',
+                gap: '10px',
+                alignItems: 'center'
             }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="glass-morphism"
+                    style={{
+                        width: '48px',
+                        height: '48px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'white',
+                        flexShrink: 0
+                    }}
+                >
+                    <Menu size={24} />
+                </button>
+
+                <div className="glass-morphism" style={{
+                    flex: 1,
+                    height: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 4px'
+                }}>
+                    <DestinationSearch onSelect={setDestination} />
+                </div>
+            </header>
+
+            {/* Main Map Area */}
+            <main style={{ flex: 1, position: 'relative' }} onMouseDown={() => setAutoCenter(false)} onTouchStart={() => setAutoCenter(false)}>
+                <MapWrapper path={path} currentLocation={currentLocation} destination={destination} autoCenter={autoCenter} />
+            </main>
+
+            {/* Bottom Floating UI */}
+            <div style={{
+                position: 'absolute',
+                bottom: '24px',
+                left: '16px',
+                right: '16px',
+                zIndex: 1000,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                pointerEvents: 'none'
+            }}>
+                {/* Stats Bubble (Left) */}
+                <div className="glass-morphism" style={{
+                    padding: '12px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    minWidth: '120px',
+                    pointerEvents: 'auto'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Navigation size={14} color="var(--primary)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>
+                            {estimateToDest ? estimateToDest.dist.toFixed(1) + ' km' : distance.toFixed(1) + ' km'}
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Clock size={14} color="var(--secondary)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>
+                            {estimateToDest ? formatDuration(estimateToDest.time) : formatDuration(elapsedSeconds)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Tracking Controls (Right) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', pointerEvents: 'auto' }}>
+                    {/* AutoCenter Button */}
                     <button
-                        onClick={() => setIsSidebarOpen(true)}
+                        onClick={() => setAutoCenter(true)}
                         className="glass-morphism"
                         style={{
                             width: '44px',
@@ -89,133 +159,54 @@ export default function Dashboard() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'white'
+                            color: autoCenter ? 'var(--primary)' : 'var(--text-muted)',
+                            border: autoCenter ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
+                            cursor: 'pointer'
                         }}
                     >
-                        <Menu size={24} />
+                        <LocateFixed size={22} />
                     </button>
 
-                    <div className="glass-morphism" style={{
-                        flex: 1,
-                        padding: '0 12px',
-                        height: '44px',
-                        display: 'flex',
-                        alignItems: 'center'
-                    }}>
-                        <DestinationSearch onSelect={setDestination} />
-                    </div>
+                    {/* Start/Stop FAB */}
+                    {!isTracking ? (
+                        <button
+                            className="btn-primary"
+                            onClick={startTrip}
+                            style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '50%',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 8px 24px rgba(99, 102, 241, 0.4)'
+                            }}
+                        >
+                            <Play size={28} fill="white" />
+                        </button>
+                    ) : (
+                        <button
+                            className="btn-primary"
+                            onClick={stopTrip}
+                            style={{
+                                width: '60px',
+                                height: '60px',
+                                borderRadius: '50%',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(239, 68, 68, 0.8)',
+                                border: '2px solid #ef4444',
+                                boxShadow: '0 8px 24px rgba(239, 68, 68, 0.4)'
+                            }}
+                        >
+                            <Square size={24} fill="white" />
+                        </button>
+                    )}
                 </div>
-            </header>
-
-            {/* Main Map */}
-            <main style={{ flex: 1, position: 'relative' }} onMouseDown={() => setAutoCenter(false)} onTouchStart={() => setAutoCenter(false)}>
-                <MapWrapper path={path} currentLocation={currentLocation} destination={destination} autoCenter={autoCenter} />
-
-                {/* AutoCenter Button */}
-                <button
-                    onClick={() => setAutoCenter(true)}
-                    className="glass-morphism"
-                    style={{
-                        position: 'absolute',
-                        right: '16px',
-                        bottom: '100px',
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: autoCenter ? 'var(--primary)' : 'var(--text-muted)',
-                        border: autoCenter ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
-                        zIndex: 1000,
-                        cursor: 'pointer'
-                    }}
-                >
-                    <LocateFixed size={24} />
-                </button>
-            </main>
-
-            {/* Controls */}
-            <footer className="glass-morphism" style={{
-                margin: '16px',
-                padding: '20px 24px',
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 1000,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-            }}>
-                {/* Minimal Stats */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '12px',
-                    textAlign: 'center'
-                }}>
-                    <div className="stat-card">
-                        <Navigation size={18} color="var(--primary)" style={{ marginBottom: '4px' }} />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            {estimateToDest ? 'Distância' : 'Total'}
-                        </p>
-                        <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>
-                            {estimateToDest ? estimateToDest.dist.toFixed(1) + ' km' : distance.toFixed(1) + ' km'}
-                        </h4>
-                    </div>
-                    <div className="stat-card">
-                        <Clock size={18} color="var(--secondary)" style={{ marginBottom: '4px' }} />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            {estimateToDest ? 'Restante' : 'Tempo'}
-                        </p>
-                        <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>
-                            {estimateToDest ? formatDuration(estimateToDest.time) : formatDuration(elapsedSeconds)}
-                        </h4>
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <p style={{
-                        fontSize: '0.85rem',
-                        color: isTracking ? '#22c55e' : 'var(--text-muted)',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    }}>
-                        <span style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: isTracking ? '#22c55e' : '#64748b',
-                            display: 'inline-block'
-                        }}></span>
-                        {isTracking ? 'Rastreamento Ativo' : 'Pronto para iniciar'}
-                    </p>
-                </div>
-
-                {!isTracking ? (
-                    <button className="btn-primary" onClick={startTrip} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                        <Play size={20} fill="white" /> Iniciar Viagem
-                    </button>
-                ) : (
-                    <button className="btn-primary" onClick={stopTrip} style={{
-                        background: 'rgba(239, 68, 68, 0.2)',
-                        border: '1px solid rgba(239, 68, 68, 0.5)',
-                        color: '#ef4444',
-                        boxShadow: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '10px'
-                    }}>
-                        <Square size={20} fill="#ef4444" /> Parar Viagem
-                    </button>
-                )}
-            </footer>
+            </div>
 
             <style dangerouslySetInnerHTML={{
                 __html: `
@@ -226,16 +217,8 @@ export default function Dashboard() {
           justify-content: center;
           background: var(--background);
         }
-        .stat-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
       `}} />
         </div>
     );
+}
 }

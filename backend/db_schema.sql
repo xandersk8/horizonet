@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     google_maps_key TEXT,
     map_provider TEXT DEFAULT 'google', -- 'google' ou 'leaflet'
+    map_theme TEXT DEFAULT 'light',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
