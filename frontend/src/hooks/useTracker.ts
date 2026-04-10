@@ -18,6 +18,7 @@ export function useTracker() {
     const [distance, setDistance] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [currentLocation, setCurrentLocation] = useState<LocationPoint | null>(null);
+    const [destination, setDestination] = useState<LocationPoint | null>(null);
     const watchIdRef = useRef<number | null>(null);
     const tripWatchIdRef = useRef<number | null>(null);
     const pendingLocationsRef = useRef<LocationPoint[]>([]);
@@ -108,7 +109,16 @@ export function useTracker() {
                         }
                     }
                 },
-                (err) => console.error("GPS Error", err),
+                (err) => {
+                    const messages = {
+                        1: "Permissão de GPS negada pelo usuário.",
+                        2: "Sinal de GPS indisponível ou fraco.",
+                        3: "Tempo de espera pelo GPS esgotado."
+                    };
+                    const msg = messages[err.code as keyof typeof messages] || "Erro desconhecido no GPS.";
+                    console.error("GPS Error Code " + err.code + ": " + msg);
+                    // Don't alert on every check, maybe just once per session or console
+                },
                 { enableHighAccuracy: true }
             );
         }
@@ -190,5 +200,5 @@ export function useTracker() {
         }
     }, [tripId]);
 
-    return { isTracking, path, distance, startTime, currentLocation, startTrip, stopTrip, tripId };
+    return { isTracking, path, distance, startTime, currentLocation, destination, setDestination, startTrip, stopTrip, tripId };
 }

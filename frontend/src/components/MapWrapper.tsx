@@ -10,6 +10,7 @@ const LeafletMap = dynamic(() => import('./LeafletMap'), { ssr: false });
 interface MapWrapperProps {
     path: LocationPoint[];
     currentLocation?: LocationPoint | null;
+    destination?: LocationPoint | null;
 }
 
 export default function MapWrapper({ path, currentLocation }: MapWrapperProps) {
@@ -18,9 +19,9 @@ export default function MapWrapper({ path, currentLocation }: MapWrapperProps) {
     return (
         <div style={{ height: '100%', width: '100%' }}>
             {mapProvider === 'google' ? (
-                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} />
+                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} destination={destination} />
             ) : (
-                <LeafletMap path={path} currentLocation={currentLocation} />
+                <LeafletMap path={path} currentLocation={currentLocation} destination={destination} />
             )}
         </div>
     );

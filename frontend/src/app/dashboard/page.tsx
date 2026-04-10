@@ -6,16 +6,31 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LogOut, Play, Square, Navigation, Settings, Clock, Fuel } from 'lucide-react';
-import { formatDuration, estimateFuel } from '@/lib/tripUtils';
+import { formatDuration, estimateFuel, calculateDistance } from '@/lib/tripUtils';
 import Link from 'next/link';
+import DestinationSearch from '@/components/DestinationSearch';
 
 export const dynamic = 'force-dynamic';
 
 export default function Dashboard() {
-    const { isTracking, path, distance, startTime, currentLocation, startTrip, stopTrip, tripId } = useTracker();
+    const { isTracking, path, distance, startTime, currentLocation, destination, setDestination, startTrip, stopTrip, tripId } = useTracker();
     const [user, setUser] = useState<any>(null);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const [estimateToDest, setEstimateToDest] = useState<{ dist: number, time: number } | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        if (currentLocation && destination) {
+            const d = calculateDistance(
+                currentLocation.latitude, currentLocation.longitude,
+                destination.latitude, destination.longitude
+            );
+            const timeHours = d / 40; // Estimação simples 40km/h
+            setEstimateToDest({ dist: d, time: Math.round(timeHours * 3600) });
+        } else {
+            setEstimateToDest(null);
+        }
+    }, [currentLocation, destination]);
 
     useEffect(() => {
         const checkUser = async () => {
@@ -47,49 +62,58 @@ export default function Dashboard() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative' }}>
-            {/* Header */}
-            <header className="glass-morphism" style={{
+            {/* Header with Search */}
+            <header style={{
                 margin: '16px',
-                padding: '12px 20px',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                flexDirection: 'column',
+                gap: '12px',
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 right: 0,
                 zIndex: 1000,
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        background: 'var(--primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <Navigation size={24} color="white" />
+                <div className="glass-morphism" style={{
+                    padding: '12px 20px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            background: 'var(--primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Navigation size={24} color="white" />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Dashboard</h2>
+                        </div>
                     </div>
-                    <div>
-                        <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Dashboard</h2>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>{user.email}</p>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                        <Link href="/settings" style={{ color: 'var(--text-muted)' }}>
+                            <Settings size={20} />
+                        </Link>
+                        <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                            <LogOut size={20} />
+                        </button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <Link href="/settings" style={{ color: 'var(--text-muted)' }}>
-                        <Settings size={20} />
-                    </Link>
-                    <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                        <LogOut size={20} />
-                    </button>
+
+                <div className="glass-morphism" style={{ padding: '12px' }}>
+                    <DestinationSearch onSelect={setDestination} />
                 </div>
             </header>
 
             {/* Main Map */}
             <main style={{ flex: 1, position: 'relative' }}>
-                <MapWrapper path={path} currentLocation={currentLocation} />
+                <MapWrapper path={path} currentLocation={currentLocation} destination={destination} />
             </main>
 
             {/* Controls */}
@@ -114,13 +138,21 @@ export default function Dashboard() {
                 }}>
                     <div className="stat-card">
                         <Navigation size={18} color="var(--primary)" style={{ marginBottom: '4px' }} />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Distância</p>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>{distance.toFixed(2)} km</h4>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
+                            {estimateToDest ? 'Distância Rest' : 'Distância'}
+                        </p>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>
+                            {estimateToDest ? estimateToDest.dist.toFixed(2) + ' km' : distance.toFixed(2) + ' km'}
+                        </h4>
                     </div>
                     <div className="stat-card">
                         <Clock size={18} color="var(--secondary)" style={{ marginBottom: '4px' }} />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Tempo</p>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>{formatDuration(elapsedSeconds)}</h4>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
+                            {estimateToDest ? 'Tempo Restant' : 'Tempo'}
+                        </p>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>
+                            {estimateToDest ? formatDuration(estimateToDest.time) : formatDuration(elapsedSeconds)}
+                        </h4>
                     </div>
                     <div className="stat-card">
                         <Fuel size={18} color="#22c55e" style={{ marginBottom: '4px' }} />

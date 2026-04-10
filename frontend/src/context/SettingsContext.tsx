@@ -48,20 +48,34 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const updateSettings = async (provider: MapProvider, key: string) => {
-        setMapProvider(provider);
-        setGoogleMapsKey(key);
-        localStorage.setItem('map_provider', provider);
+        try {
+            setMapProvider(provider);
+            setGoogleMapsKey(key);
+            localStorage.setItem('map_provider', provider);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            await supabase
-                .from('user_settings')
-                .upsert({
-                    user_id: user.id,
-                    map_provider: provider,
-                    google_maps_key: key,
-                    updated_at: new Date().toISOString()
-                });
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { error } = await supabase
+                    .from('user_settings')
+                    .upsert({
+                        user_id: user.id,
+                        map_provider: provider,
+                        google_maps_key: key,
+                        updated_at: new Date().toISOString()
+                    });
+
+                if (error) {
+                    console.error('Supabase Save Error:', error);
+                    alert('Erro ao salvar no banco de dados: ' + error.message);
+                } else {
+                    console.log('Settings saved successfully');
+                }
+            } else {
+                alert('Usuário não autenticado');
+            }
+        } catch (err: any) {
+            console.error('Unexpected Save Error:', err);
+            alert('Erro inesperado: ' + err.message);
         }
     };
 

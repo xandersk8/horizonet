@@ -7,6 +7,7 @@ interface MapProps {
     path: LocationPoint[];
     apiKey?: string;
     currentLocation?: LocationPoint | null;
+    destination?: LocationPoint | null;
 }
 
 const containerStyle = {

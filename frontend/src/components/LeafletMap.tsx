@@ -18,7 +18,16 @@ L.Marker.prototype.options.icon = DefaultIcon;
 interface MapProps {
     path: LocationPoint[];
     currentLocation?: LocationPoint | null;
+    destination?: LocationPoint | null;
 }
+
+const DestIcon = L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    className: 'destination-marker'
+});
 
 function ChangeView({ center }: { center: [number, number] }) {
     const map = useMap();
@@ -54,9 +63,16 @@ export default function LeafletMap({ path, currentLocation }: MapProps) {
                     pathOptions={{ color: '#6366f1', weight: 4 }}
                 />
                 <ChangeView center={center} />
-                {(path.length > 0 || currentLocation) && (
-                    <Marker position={currentLocation ? [currentLocation.latitude, currentLocation.longitude] : center} icon={DefaultIcon} />
+                {/* Marker do Destino */}
+                {destination && (
+                    <Marker position={[destination.latitude, destination.longitude]} icon={DestIcon} />
                 )}
+
+                <style>{`
+                    .destination-marker {
+                        filter: hue-rotate(140deg) brightness(1.2);
+                    }
+                `}</style>
             </MapContainer>
         </div>
     );
