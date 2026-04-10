@@ -5,7 +5,7 @@ import { useTracker } from '@/hooks/useTracker';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Play, Square, Navigation, Settings, Clock, Fuel } from 'lucide-react';
+import { LogOut, Play, Square, Navigation, Settings, Clock, Fuel, Map, LocateFixed } from 'lucide-react';
 import { formatDuration, estimateFuel, calculateDistance } from '@/lib/tripUtils';
 import Link from 'next/link';
 import DestinationSearch from '@/components/DestinationSearch';
@@ -17,6 +17,7 @@ export default function Dashboard() {
     const [user, setUser] = useState<any>(null);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const [estimateToDest, setEstimateToDest] = useState<{ dist: number, time: number } | null>(null);
+    const [autoCenter, setAutoCenter] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
