@@ -11,6 +11,8 @@ export interface LocationPoint {
     timestamp: string;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+
 export function useTracker() {
     const [tripId, setTripId] = useState<string | null>(null);
     const [isTracking, setIsTracking] = useState(false);
@@ -32,7 +34,7 @@ export function useTracker() {
                 ? process.env.NEXT_PUBLIC_BACKEND_URL
                 : 'https://sua-url-do-backend-no-render-ou-railway.com'; // Placeholder or env
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/locations`, {
+            const response = await fetch(`${BACKEND_URL}/api/locations`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -57,7 +59,7 @@ export function useTracker() {
         }
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/trips`, {
+            const response = await fetch(`${BACKEND_URL}/api/trips`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session.session.access_token}`
@@ -73,7 +75,7 @@ export function useTracker() {
             socket.emit('join-trip', data.id);
         } catch (err) {
             console.error('Error starting trip:', err);
-            alert('Erro ao iniciar viagem. Verifique se o servidor backend está rodando em ' + process.env.NEXT_PUBLIC_BACKEND_URL);
+            alert('Erro ao iniciar viagem. Verifique se o servidor backend está rodando em ' + BACKEND_URL);
         }
     };
 
@@ -182,7 +184,7 @@ export function useTracker() {
         if (!tripId) return;
 
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/trips/${tripId}/finish`, {
+            await fetch(`${BACKEND_URL}/api/trips/${tripId}/finish`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`

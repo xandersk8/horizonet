@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet
 import 'leaflet/dist/leaflet.css';
 import { LocationPoint } from '@/hooks/useTracker';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 // Fix for default marker icon in Leaflet + Next.js
 const DefaultIcon = L.icon({
@@ -33,6 +33,8 @@ const DestIcon = L.icon({
 
 function ChangeView({ center, destination, autoCenter }: { center: [number, number], destination?: [number, number] | null, autoCenter: boolean }) {
     const map = useMap();
+    const lastPannedDest = useRef<string | null>(null);
+
     useEffect(() => {
         if (autoCenter) {
             map.setView(center, map.getZoom());
@@ -41,7 +43,13 @@ function ChangeView({ center, destination, autoCenter }: { center: [number, numb
 
     useEffect(() => {
         if (destination) {
-            map.flyTo(destination, 16);
+            const destKey = `${destination[0]},${destination[1]}`;
+            if (lastPannedDest.current !== destKey) {
+                map.flyTo(destination, 16);
+                lastPannedDest.current = destKey;
+            }
+        } else {
+            lastPannedDest.current = null;
         }
     }, [destination, map]);
 

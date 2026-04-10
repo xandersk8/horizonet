@@ -2,7 +2,7 @@
 
 import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
 import { LocationPoint } from '@/hooks/useTracker';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface MapProps {
     path: LocationPoint[];
@@ -32,17 +32,25 @@ export default function Map({ path, apiKey, currentLocation, destination, theme,
             ? { lat: currentLocation.latitude, lng: currentLocation.longitude }
             : { lat: -23.55052, lng: -46.633308 }; // Default to São Paulo
 
+    const lastPannedDestRef = useRef<string | null>(null);
+
     useEffect(() => {
         if (map && center && autoCenter) {
             map.panTo(center);
         }
     }, [map, center, autoCenter]);
 
-    // Pan to destination when it's selected
+    // Pan to destination when it's selected (one-time per selection)
     useEffect(() => {
         if (map && destination) {
-            map.panTo({ lat: destination.latitude, lng: destination.longitude });
-            map.setZoom(16);
+            const destKey = `${destination.latitude},${destination.longitude}`;
+            if (lastPannedDestRef.current !== destKey) {
+                map.panTo({ lat: destination.latitude, lng: destination.longitude });
+                map.setZoom(16);
+                lastPannedDestRef.current = destKey;
+            }
+        } else {
+            lastPannedDestRef.current = null;
         }
     }, [map, destination]);
 

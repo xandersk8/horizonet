@@ -156,7 +156,10 @@ export default function Dashboard() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', pointerEvents: 'auto' }}>
                     {/* AutoCenter Button */}
                     <button
-                        onClick={() => setAutoCenter(true)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setAutoCenter(true);
+                        }}
                         className="glass-morphism"
                         style={{
                             width: '42px',
