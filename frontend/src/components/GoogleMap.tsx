@@ -8,6 +8,7 @@ interface MapProps {
     apiKey?: string;
     currentLocation?: LocationPoint | null;
     destination?: LocationPoint | null;
+    theme?: 'light' | 'dark';
 }
 
 const containerStyle = {

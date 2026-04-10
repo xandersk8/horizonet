@@ -14,14 +14,14 @@ interface MapWrapperProps {
 }
 
 export default function MapWrapper({ path, currentLocation, destination }: MapWrapperProps) {
-    const { mapProvider, googleMapsKey } = useSettings();
+    const { mapProvider, googleMapsKey, mapTheme } = useSettings();
 
     return (
         <div style={{ height: '100%', width: '100%' }}>
             {mapProvider === 'google' ? (
-                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} destination={destination} />
+                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} destination={destination} theme={mapTheme} />
             ) : (
-                <LeafletMap path={path} currentLocation={currentLocation} destination={destination} />
+                <LeafletMap path={path} currentLocation={currentLocation} destination={destination} theme={mapTheme} />
             )}
         </div>
     );

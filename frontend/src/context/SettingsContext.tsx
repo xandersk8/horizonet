@@ -4,45 +4,61 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 type MapProvider = 'google' | 'leaflet';
+type MapTheme = 'light' | 'dark';
 
 interface SettingsContextType {
     mapProvider: MapProvider;
     googleMapsKey: string;
-    setSettings: (provider: MapProvider, key: string) => Promise<void>;
+    mapTheme: MapTheme;
+    setSettings: (provider: MapProvider, key: string, theme: MapTheme) => Promise<void>;
     loading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-    const [mapProvider, setMapProvider] = useState<MapProvider>('google');
+    const [mapProvider, setMapProvider] = useState<MapProvider>('leaflet');
     const [googleMapsKey, setGoogleMapsKey] = useState<string>('');
+    const [mapTheme, setMapTheme] = useState<MapTheme>('light');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function loadSettings() {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
 
-            if (user) {
-                const { data, error } = await supabase
-                    .from('user_settings')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .single();
+            // Quick load from localStorage for better UX
+            const localProvider = localStorage.getItem('map_provider') as MapProvider;
+            if (localProvider) setMapProvider(localProvider);
 
-                if (data) {
-                    const key = data.google_maps_key || '';
-                    setGoogleMapsKey(key);
-                    // If no key, force Leaflet even if saved as google
-                    setMapProvider(!key ? 'leaflet' : (data.map_provider as MapProvider || 'google'));
-                } else {
-                    setMapProvider('leaflet'); // Default for new users
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+
+                if (user) {
+                    const { data, error } = await supabase
+                        .from('user_settings')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .single();
+
+                    if (data) {
+                        const key = data.google_maps_key || '';
+                        const savedProvider = data.map_provider as MapProvider;
+                        setGoogleMapsKey(key);
+
+                        // If user has key, use their saved provider. 
+                        // If no key, always force leaflet.
+                        if (!key) {
+                            setMapProvider('leaflet');
+                        } else if (savedProvider) {
+                            setMapProvider(savedProvider);
+                        }
+                    }
                 }
-            } else {
+            } catch (err) {
+                console.error("Error loading settings:", err);
+            } finally {
                 setLoading(false);
             }
-            setLoading(false);
         }
         loadSettings();
     }, []);
@@ -80,7 +96,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <SettingsContext.Provider value={{ mapProvider, googleMapsKey, setSettings: updateSettings, loading }}>
+        <SettingsContext.Provider value={{ mapProvider, googleMapsKey, mapTheme, setSettings: updateSettings, loading }}>
             {children}
         </SettingsContext.Provider>
     );
