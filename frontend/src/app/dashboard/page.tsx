@@ -150,35 +150,30 @@ export default function Dashboard() {
                 flexDirection: 'column',
                 gap: '16px'
             }}>
-                {/* Stats Grid */}
+                {/* Minimal Stats */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '10px',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '12px',
                     textAlign: 'center'
                 }}>
                     <div className="stat-card">
                         <Navigation size={18} color="var(--primary)" style={{ marginBottom: '4px' }} />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
-                            {estimateToDest ? 'Distância Rest' : 'Distância'}
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {estimateToDest ? 'Distância' : 'Total'}
                         </p>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>
-                            {estimateToDest ? estimateToDest.dist.toFixed(2) + ' km' : distance.toFixed(2) + ' km'}
+                        <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>
+                            {estimateToDest ? estimateToDest.dist.toFixed(1) + ' km' : distance.toFixed(1) + ' km'}
                         </h4>
                     </div>
                     <div className="stat-card">
                         <Clock size={18} color="var(--secondary)" style={{ marginBottom: '4px' }} />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>
-                            {estimateToDest ? 'Tempo Restant' : 'Tempo'}
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {estimateToDest ? 'Restante' : 'Tempo'}
                         </p>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>
+                        <h4 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>
                             {estimateToDest ? formatDuration(estimateToDest.time) : formatDuration(elapsedSeconds)}
                         </h4>
-                    </div>
-                    <div className="stat-card">
-                        <Fuel size={18} color="#22c55e" style={{ marginBottom: '4px' }} />
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', margin: 0 }}>Consumo</p>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>{estimateFuel(distance).toFixed(2)} L</h4>
                     </div>
                 </div>
 
