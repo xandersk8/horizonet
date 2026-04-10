@@ -41,7 +41,7 @@ function ChangeView({ center, autoCenter }: { center: [number, number], autoCent
     return null;
 }
 
-export default function LeafletMap({ path, currentLocation, destination }: MapProps) {
+export default function LeafletMap({ path, currentLocation, destination, theme = 'light', autoCenter = true }: MapProps) {
     const center: [number, number] = path.length > 0
         ? [path[path.length - 1].latitude, path[path.length - 1].longitude]
         : currentLocation

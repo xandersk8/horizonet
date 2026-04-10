@@ -2,6 +2,7 @@
 
 import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
 import { LocationPoint } from '@/hooks/useTracker';
+import { useState, useEffect } from 'react';
 
 interface MapProps {
     path: LocationPoint[];
