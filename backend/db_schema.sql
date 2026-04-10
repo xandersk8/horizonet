@@ -1,0 +1,35 @@
+-- Table: viagens
+CREATE TABLE IF NOT EXISTS viagens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    data_inicio TIMESTAMPTZ DEFAULT NOW(),
+    data_fim TIMESTAMPTZ,
+    status TEXT DEFAULT 'em_andamento' -- 'em_andamento', 'concluida'
+);
+
+-- Table: localizacoes
+CREATE TABLE IF NOT EXISTS localizacoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    viagem_id UUID REFERENCES viagens(id) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Row Level Security (RLS)
+ALTER TABLE viagens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE localizacoes ENABLE ROW LEVEL SECURITY;
+
+-- Policies for viagens
+CREATE POLICY "Users can manage their own trips" ON viagens
+    FOR ALL USING (auth.uid() = user_id);
+
+-- Policies for localizacoes (linked to user's trips)
+CREATE POLICY "Users can manage locations for their own trips" ON localizacoes
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM viagens 
+            WHERE viagens.id = localizacoes.viagem_id 
+            AND viagens.user_id = auth.uid()
+        )
+    );

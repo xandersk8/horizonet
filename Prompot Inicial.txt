@@ -1,0 +1,171 @@
+# 🚀 Projeto: Rastreador de Viagens com Mapa em Tempo Real
+
+## 📌 Objetivo
+
+Desenvolver uma aplicação web responsiva (mobile e desktop) que permita registrar viagens em tempo real utilizando GPS, exibindo rotas em um mapa e salvando o histórico no backend.
+
+---
+
+## 🧱 Stack Tecnológica
+
+### Frontend
+
+* Framework: React / Next.js
+* Responsivo para mobile e desktop
+* Integração com API de geolocalização do navegador
+* Integração com Google Maps API
+
+### Backend
+
+* Node.js com Express
+* API REST para receber dados de localização
+* WebSockets (Socket.IO) para atualização em tempo real
+
+### Banco de Dados
+
+* Supabase (PostgreSQL)
+
+### Deploy
+
+* Vercel (frontend)
+* Backend pode rodar via serverless functions ou serviço externo integrado
+
+---
+
+## 🔐 Autenticação
+
+* Sistema de login e cadastro de usuários
+* Autenticação via Supabase Auth
+* Sessão persistente
+* Cada usuário possui suas próprias viagens
+
+---
+
+## 🧭 Funcionalidades Principais
+
+### 1. Iniciar viagem
+
+* Botão "Iniciar viagem"
+* Cria um novo registro de viagem no banco
+
+### 2. Captura de localização
+
+* Uso de `navigator.geolocation.watchPosition`
+* Captura contínua da localização (latitude, longitude, timestamp)
+* Frequência ajustável (ex: a cada 5–10 segundos)
+
+### 3. Armazenamento
+
+* Envio das coordenadas para o backend via API
+* Estrutura:
+
+Viagens:
+
+* id
+* user_id
+* data_inicio
+* data_fim
+
+Localizações:
+
+* id
+* viagem_id
+* latitude
+* longitude
+* timestamp
+
+---
+
+### 4. Mapa
+
+* Exibir mapa usando Google Maps API
+* Desenhar rota da viagem com Polyline
+* Atualizar rota em tempo real
+
+---
+
+### 5. Tempo real
+
+* Utilizar WebSockets (Socket.IO)
+* Atualizar mapa automaticamente conforme novos pontos chegam
+
+---
+
+### 6. Funcionamento offline
+
+* Caso não haja internet:
+
+  * Armazenar localmente (localStorage ou IndexedDB)
+  * Sincronizar automaticamente quando conexão voltar
+
+---
+
+### 7. Permissões
+
+* Solicitar permissão de localização ao usuário
+* Garantir que o rastreamento funcione em segundo plano (quando possível)
+* Tratar erros de permissão negada
+
+---
+
+## ⚙️ Requisitos Técnicos
+
+* Aplicação deve ser PWA (opcional, mas recomendado)
+* Código organizado em módulos (frontend e backend separados)
+* API segura com autenticação via token
+* Uso de variáveis de ambiente para chaves (Google Maps, Supabase)
+
+---
+
+## 🎯 Diferenciais (Opcional / Futuro)
+
+* Marcação de paradas automaticamente
+* Upload de fotos durante a viagem
+* Compartilhamento de viagens via link público
+* Estatísticas (distância percorrida, tempo, velocidade média)
+* Replay da rota no mapa
+
+---
+
+## 📦 Entregáveis esperados
+
+* Interface com login funcional
+* Botão de iniciar viagem
+* Mapa exibindo rota em tempo real
+* Backend salvando dados corretamente
+* Integração completa com Supabase
+* Sistema funcional em ambiente web (Vercel)
+
+---
+
+## 🧠 Observações importantes
+
+* Otimizar uso de GPS para economizar bateria
+* Garantir tratamento de falhas de rede
+* Evitar duplicação de pontos
+* Garantir precisão mínima da localização
+
+---
+
+## 📍 Resumo
+
+Aplicação estilo "diário de viagem com mapa", onde o usuário pode:
+
+* Registrar trajetos em tempo real
+* Visualizar rotas no mapa
+* Salvar histórico de viagens
+* Acessar tudo via login pessoal
+
+---
+
+## 💬 Instrução final
+
+Gerar o projeto completo com:
+
+* Estrutura de pastas
+* Código frontend e backend
+* Integração com Supabase
+* Implementação de WebSocket
+* Integração com Google Maps
+* Sistema de autenticação
+* Funcionalidade offline básica
