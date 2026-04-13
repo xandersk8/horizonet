@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, MapPin, X, Briefcase, Clock, Home as HomeIcon, Navigation } from 'lucide-react';
+import { Search, MapPin, X, Briefcase, Clock, Home as HomeIcon, Navigation, BookmarkPlus, Star } from 'lucide-react';
 import { LocationPoint } from '@/hooks/useTracker';
+import { supabase } from '@/lib/supabase';
 
 interface SearchResult {
     display_name: string;
@@ -24,13 +25,49 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
     const [loading, setLoading] = useState(false);
     const [selectedName, setSelectedName] = useState('');
     const [isFocused, setIsFocused] = useState(false);
+    const [savedPlaces, setSavedPlaces] = useState<SearchResult[]>([]);
 
-    const savedPlaces: SearchResult[] = [
-        { name: 'Seu local', address: 'Localização atual', icon: <Navigation size={18} />, lat: '-23.55052', lon: '-46.633308', display_name: 'Seu local' },
-        { name: 'Trabalho', address: 'R. Antônio Aparecido Ferrz, 86...', icon: <Briefcase size={18} />, lat: '-23.55', lon: '-46.64', display_name: 'Trabalho' },
-        { name: 'Casa', address: 'Rua Ernesto Albino Moeckel...', icon: <HomeIcon size={18} />, lat: '-23.56', lon: '-46.65', display_name: 'Casa' },
-        { name: 'Peruíbe', address: 'Peruíbe - SP', icon: <Clock size={18} />, lat: '-24.32', lon: '-46.99', display_name: 'Peruíbe' }
-    ];
+    const fetchSavedPlaces = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('saved_places')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (data) {
+            const mapped = data.map(p => ({
+                name: p.name,
+                address: p.address,
+                lat: p.latitude.toString(),
+                lon: p.longitude.toString(),
+                display_name: p.address,
+                icon: p.name === 'Casa' ? <HomeIcon size={18} /> :
+                    p.name === 'Trabalho' ? <Briefcase size={18} /> : <Star size={18} />
+            }));
+            setSavedPlaces(mapped);
+        }
+    };
+
+    const savePlace = async (result: SearchResult, name: string) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase.from('saved_places').insert({
+            user_id: user.id,
+            name,
+            address: result.display_name,
+            latitude: parseFloat(result.lat),
+            longitude: parseFloat(result.lon)
+        });
+
+        if (!error) {
+            fetchSavedPlaces();
+        } else {
+            console.error('Save place error:', error);
+        }
+    };
 
     // Autocomplete effect with debounce
     useEffect(() => {
@@ -38,7 +75,7 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
             if (query.length > 2) {
                 setLoading(true);
                 try {
-                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8&addressdetails=1&countrycodes=br&namedetails=1`);
                     const data = await response.json();
                     setResults(data);
                 } catch (err) {
@@ -53,6 +90,12 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
 
         return () => clearTimeout(timer);
     }, [query]);
+
+    useEffect(() => {
+        if (isFocused) {
+            fetchSavedPlaces();
+        }
+    }, [isFocused]);
 
     const handleSelect = (result: SearchResult) => {
         const point = {
@@ -151,7 +194,6 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                     ) : (query.length === 0 ? savedPlaces : results).map((r, i) => (
                         <div
                             key={i}
-                            onClick={() => handleSelect(r)}
                             className="search-result-item"
                             style={{
                                 padding: '12px 16px',
@@ -161,20 +203,22 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                                 alignItems: 'center',
                                 gap: '12px',
                                 borderRadius: '12px',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                position: 'relative'
                             }}
+                            onClick={() => handleSelect(r)}
                         >
                             <div style={{
                                 width: '36px',
                                 height: '36px',
                                 borderRadius: '50%',
-                                background: query.length === 0 ? 'rgba(99, 102, 241, 0.1)' : 'rgba(148, 163, 184, 0.1)',
+                                background: (query.length === 0 || r.name) ? 'rgba(99, 102, 241, 0.1)' : 'rgba(148, 163, 184, 0.1)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: query.length === 0 ? 'var(--primary)' : '#64748b'
+                                color: (query.length === 0 || r.name) ? 'var(--primary)' : '#64748b'
                             }}>
-                                {query.length === 0 ? r.icon : <MapPin size={18} />}
+                                {(query.length === 0 || r.icon) ? r.icon : <MapPin size={18} />}
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontWeight: '600', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -184,8 +228,39 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                                     {query.length === 0 ? r.address : r.display_name}
                                 </div>
                             </div>
+
+                            {query.length > 0 && (
+                                <div style={{ display: 'flex', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        onClick={() => savePlace(r, 'Casa')}
+                                        className="mini-btn"
+                                        title="Salvar como Casa"
+                                    >
+                                        <HomeIcon size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => savePlace(r, 'Trabalho')}
+                                        className="mini-btn"
+                                        title="Salvar como Trabalho"
+                                    >
+                                        <Briefcase size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => savePlace(r, 'Favorito')}
+                                        className="mini-btn"
+                                        title="Salvar como Favorito"
+                                    >
+                                        <Star size={14} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
+                    {query.length === 0 && savedPlaces.length === 0 && (
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>
+                            Nenhum lugar salvo ainda. Pesquise e clique na estrela para salvar!
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -197,6 +272,23 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                     background: rgba(99, 102, 241, 0.05);
                 }
                 .search-result-item:hover :global(svg) {
+                    color: var(--primary);
+                }
+                .mini-btn {
+                    background: rgba(0,0,0,0.03);
+                    border: none;
+                    border-radius: 50%;
+                    width: 28px;
+                    height: 28px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    color: #64748b;
+                }
+                .mini-btn:hover {
+                    background: rgba(99, 102, 241, 0.1);
                     color: var(--primary);
                 }
             `}</style>

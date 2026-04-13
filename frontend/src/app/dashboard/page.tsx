@@ -45,12 +45,21 @@ export default function Dashboard() {
 
     useEffect(() => {
         const checkUser = async () => {
-            const { data } = await supabase.auth.getUser();
-            if (!data.user) router.push('/login');
-            else setUser(data.user);
+            try {
+                const { data, error } = await supabase.auth.getUser();
+                if (error || !data.user) {
+                    router.push('/login');
+                } else {
+                    setUser(data.user);
+                }
+            } catch (err) {
+                console.error("Auth check failed:", err);
+                router.push('/login');
+            }
         };
         checkUser();
     }, [router]);
+
 
     useEffect(() => {
         let timer: any;

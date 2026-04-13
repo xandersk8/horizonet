@@ -6,7 +6,7 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { LocationPoint } from '@/hooks/useTracker';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Fix for default marker icon in Leaflet + Next.js
 const DefaultIcon = L.icon({
@@ -39,9 +39,11 @@ const DestIcon = L.icon({
 function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number, number], destination: [number, number], onRouteFound?: (data: { distance: number, time: number }) => void }) {
     const map = useMap();
     const routingControlRef = useRef<any>(null);
+    const [routePath, setRoutePath] = useState<[number, number][]>([]);
 
     useEffect(() => {
         if (!map) return;
+        setRoutePath([]); // Clear old route
 
         // @ts-ignore
         const routingControl = L.Routing.control({
@@ -51,8 +53,8 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
             ],
             lineOptions: {
                 styles: [
-                    { color: '#6366f1', weight: 6, opacity: 0.8 },
-                    { color: '#ffffff', weight: 2, opacity: 1 } // Inner line for better visibility
+                    { color: '#5046e5', weight: 8, opacity: 0.9 }, // Indigo thick line
+                    { color: '#ffffff', weight: 3, opacity: 1 }   // White casing
                 ],
                 extendToWaypoints: true,
                 missingRouteTolerance: 10
@@ -76,8 +78,13 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
         routingControl.on('routesfound', (e: any) => {
             const routes = e.routes;
             const summary = routes[0].summary;
+
+            // Extract coordinates for fallback polyline
+            if (routes[0].coordinates) {
+                setRoutePath(routes[0].coordinates.map((c: any) => [c.lat, c.lng]));
+            }
+
             if (onRouteFound) {
-                // distance está em metros, converter para km. totalTime em segundos.
                 onRouteFound({
                     distance: summary.totalDistance / 1000,
                     time: summary.totalTime
@@ -89,13 +96,23 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
 
         return () => {
             if (map && routingControlRef.current) {
-                map.removeControl(routingControlRef.current);
+                try {
+                    map.removeControl(routingControlRef.current);
+                } catch (e) {
+                    console.log('Error removing control', e);
+                }
             }
         };
     }, [map, origin, destination]);
 
-    return null;
+    return routePath.length > 0 ? (
+        <>
+            <Polyline positions={routePath} pathOptions={{ color: '#5046e5', weight: 8, opacity: 0.9 }} />
+            <Polyline positions={routePath} pathOptions={{ color: '#ffffff', weight: 3, opacity: 1 }} />
+        </>
+    ) : null;
 }
+
 
 function ChangeView({ center, destination, autoCenter }: { center: [number, number], destination?: [number, number] | null, autoCenter: boolean }) {
     const map = useMap();
