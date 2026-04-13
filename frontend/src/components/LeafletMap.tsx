@@ -2,8 +2,10 @@
 
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import { LocationPoint } from '@/hooks/useTracker';
 import L from 'leaflet';
+import 'leaflet-routing-machine';
 import { useEffect, useRef } from 'react';
 
 // Fix for default marker icon in Leaflet + Next.js
@@ -19,8 +21,10 @@ interface MapProps {
     path: LocationPoint[];
     currentLocation?: LocationPoint | null;
     destination?: LocationPoint | null;
+    origin?: LocationPoint | null;
     theme?: 'light' | 'dark';
     autoCenter?: boolean;
+    onRouteFound?: (data: { distance: number, time: number }) => void;
 }
 
 const DestIcon = L.icon({
@@ -30,6 +34,56 @@ const DestIcon = L.icon({
     iconAnchor: [12, 41],
     className: 'destination-marker'
 });
+
+function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number, number], destination: [number, number], onRouteFound?: (data: { distance: number, time: number }) => void }) {
+    const map = useMap();
+    const routingControlRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (!map) return;
+
+        // @ts-ignore
+        const routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(origin[0], origin[1]),
+                L.latLng(destination[0], destination[1])
+            ],
+            lineOptions: {
+                styles: [{ color: '#6366f1', weight: 6, opacity: 0.8 }],
+                extendToWaypoints: true,
+                missingRouteTolerance: 10
+            },
+            show: false, // Desabilitar painel de texto
+            addWaypoints: false,
+            routeWhileDragging: false,
+            fitSelectedRoutes: false,
+            // @ts-ignore
+            createMarker: () => null // Deixa os marcadores originais do componente pai
+        }).addTo(map);
+
+        routingControl.on('routesfound', (e: any) => {
+            const routes = e.routes;
+            const summary = routes[0].summary;
+            if (onRouteFound) {
+                // distance está em metros, converter para km. totalTime em segundos.
+                onRouteFound({
+                    distance: summary.totalDistance / 1000,
+                    time: summary.totalTime
+                });
+            }
+        });
+
+        routingControlRef.current = routingControl;
+
+        return () => {
+            if (map && routingControlRef.current) {
+                map.removeControl(routingControlRef.current);
+            }
+        };
+    }, [map, origin, destination]);
+
+    return null;
+}
 
 function ChangeView({ center, destination, autoCenter }: { center: [number, number], destination?: [number, number] | null, autoCenter: boolean }) {
     const map = useMap();
@@ -56,7 +110,7 @@ function ChangeView({ center, destination, autoCenter }: { center: [number, numb
     return null;
 }
 
-export default function LeafletMap({ path, currentLocation, destination, theme = 'light', autoCenter = true }: MapProps) {
+export default function LeafletMap({ path, currentLocation, destination, origin, theme = 'light', autoCenter = true, onRouteFound }: MapProps) {
     const center: [number, number] = path.length > 0
         ? [path[path.length - 1].latitude, path[path.length - 1].longitude]
         : currentLocation
@@ -64,6 +118,10 @@ export default function LeafletMap({ path, currentLocation, destination, theme =
             : [-23.55052, -46.633308];
 
     const polylinePath: [number, number][] = path.map(p => [p.latitude, p.longitude]);
+    const destPoint: [number, number] | null = destination ? [destination.latitude, destination.longitude] : null;
+    const originPoint: [number, number] | null = origin
+        ? [origin.latitude, origin.longitude]
+        : currentLocation ? [currentLocation.latitude, currentLocation.longitude] : null;
 
     return (
         <div style={{ height: '100%', width: '100%' }}>
@@ -80,13 +138,18 @@ export default function LeafletMap({ path, currentLocation, destination, theme =
                         : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                     }
                 />
+
+                {originPoint && destPoint && (
+                    <RoutingMachine origin={originPoint} destination={destPoint} onRouteFound={onRouteFound} />
+                )}
+
                 <Polyline
                     positions={polylinePath}
                     pathOptions={{ color: '#6366f1', weight: 4 }}
                 />
                 <ChangeView
                     center={center}
-                    destination={destination ? [destination.latitude, destination.longitude] : null}
+                    destination={destPoint}
                     autoCenter={autoCenter}
                 />
 

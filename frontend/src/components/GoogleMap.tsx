@@ -1,16 +1,18 @@
 'use client';
 
-import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Polyline, Marker, DirectionsRenderer } from '@react-google-maps/api';
 import { LocationPoint } from '@/hooks/useTracker';
 import { useState, useEffect, useRef } from 'react';
 
 interface MapProps {
     path: LocationPoint[];
-    apiKey?: string;
+    apiKey: string;
     currentLocation?: LocationPoint | null;
     destination?: LocationPoint | null;
+    origin?: LocationPoint | null;
     theme?: 'light' | 'dark';
     autoCenter?: boolean;
+    onRouteFound?: (data: { distance: number, time: number }) => void;
 }
 
 const containerStyle = {
@@ -18,13 +20,14 @@ const containerStyle = {
     height: '100%'
 };
 
-export default function Map({ path, apiKey, currentLocation, destination, theme, autoCenter = true }: MapProps) {
+export default function Map({ path, apiKey, currentLocation, destination, origin, theme, autoCenter = true, onRouteFound }: MapProps) {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: apiKey || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+        googleMapsApiKey: apiKey
     });
 
     const [map, setMap] = useState<google.maps.Map | null>(null);
+    const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
 
     const center = path.length > 0
         ? { lat: path[path.length - 1].latitude, lng: path[path.length - 1].longitude }
@@ -39,6 +42,37 @@ export default function Map({ path, apiKey, currentLocation, destination, theme,
             map.panTo(center);
         }
     }, [map, center, autoCenter]);
+
+    // Google Maps Directions logic
+    useEffect(() => {
+        if (isLoaded && destination) {
+            const org = origin
+                ? { lat: origin.latitude, lng: origin.longitude }
+                : (currentLocation ? { lat: currentLocation.latitude, lng: currentLocation.longitude } : null);
+
+            if (org) {
+                const service = new google.maps.DirectionsService();
+                service.route({
+                    origin: org,
+                    destination: { lat: destination.latitude, lng: destination.longitude },
+                    travelMode: google.maps.TravelMode.DRIVING
+                }, (result, status) => {
+                    if (status === 'OK' && result) {
+                        setDirections(result);
+                        const leg = result.routes[0].legs[0];
+                        if (onRouteFound && leg.distance?.value && leg.duration?.value) {
+                            onRouteFound({
+                                distance: leg.distance.value / 1000,
+                                time: leg.duration.value
+                            });
+                        }
+                    }
+                });
+            }
+        } else {
+            setDirections(null);
+        }
+    }, [isLoaded, origin, destination, currentLocation]);
 
     // Pan to destination when it's selected (one-time per selection)
     useEffect(() => {
@@ -85,34 +119,23 @@ export default function Map({ path, apiKey, currentLocation, destination, theme,
                 />
             )}
 
-            {(path.length > 0 || currentLocation) && (
+            {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true }} />}
+
+            {currentLocation && (
                 <Marker
-                    position={path.length > 0
-                        ? { lat: path[path.length - 1].latitude, lng: path[path.length - 1].longitude }
-                        : { lat: currentLocation!.latitude, lng: currentLocation!.longitude }
-                    }
-                    icon={typeof google !== 'undefined' ? {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 8,
-                        fillColor: "#6366f1",
-                        fillOpacity: 1,
-                        strokeWeight: 2,
-                        strokeColor: "white",
-                    } : undefined}
+                    position={{ lat: currentLocation.latitude, lng: currentLocation.longitude }}
+                    label="Eu"
                 />
             )}
 
             {destination && (
                 <Marker
                     position={{ lat: destination.latitude, lng: destination.longitude }}
-                    icon={typeof google !== 'undefined' ? {
-                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                        scale: 6,
-                        fillColor: "#ef4444",
-                        fillOpacity: 1,
-                        strokeWeight: 2,
-                        strokeColor: "white",
-                    } : undefined}
+                    icon={{
+                        url: "https://cdn-icons-png.flaticon.com/512/2776/2776067.png",
+                        scaledSize: new google.maps.Size(32, 32),
+                        anchor: new google.maps.Point(16, 32)
+                    }}
                 />
             )}
         </GoogleMap>

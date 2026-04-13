@@ -1,7 +1,7 @@
 'use client';
 
 import MapWrapper from '@/components/MapWrapper';
-import { useTracker } from '@/hooks/useTracker';
+import { useTracker, LocationPoint } from '@/hooks/useTracker';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -15,26 +15,21 @@ import { Menu } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export default function Dashboard() {
-    const { isTracking, path, distance, startTime, currentLocation, destination, setDestination, startTrip, stopTrip, tripId } = useTracker();
+    const { isTracking, path, distance, startTime, currentLocation, destination: trackerDest, setDestination: setTrackerDest, startTrip, stopTrip, tripId } = useTracker();
     const [user, setUser] = useState<any>(null);
+    const [destination, setDestination] = useState<LocationPoint | null>(null);
+    const [origin, setOrigin] = useState<LocationPoint | null>(null);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
-    const [estimateToDest, setEstimateToDest] = useState<{ dist: number, time: number } | null>(null);
+    const [estimateToDest, setEstimateToDest] = useState<{ distance: number, time: number } | null>(null);
     const [autoCenter, setAutoCenter] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [showRouteInputs, setShowRouteInputs] = useState(false);
     const router = useRouter();
 
+    // Remove manual calculation as it's now handled by the Map Plugin
     useEffect(() => {
-        if (currentLocation && destination) {
-            const d = calculateDistance(
-                currentLocation.latitude, currentLocation.longitude,
-                destination.latitude, destination.longitude
-            );
-            const timeHours = d / 40; // Estimação simples 40km/h
-            setEstimateToDest({ dist: d, time: Math.round(timeHours * 3600) });
-        } else {
-            setEstimateToDest(null);
-        }
-    }, [currentLocation, destination]);
+        // ... (manual effect removed)
+    }, [currentLocation, destination, origin]);
 
     useEffect(() => {
         const checkUser = async () => {
@@ -75,45 +70,91 @@ export default function Dashboard() {
                 right: '12px',
                 zIndex: 1000,
                 display: 'flex',
-                gap: '10px',
-                alignItems: 'center'
+                flexDirection: 'column',
+                gap: '8px',
             }}>
-                <button
-                    onClick={() => setIsSidebarOpen(true)}
-                    className="glass-morphism"
-                    style={{
-                        width: '48px',
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="glass-morphism"
+                        style={{
+                            width: '48px',
+                            height: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'white',
+                            flexShrink: 0
+                        }}
+                    >
+                        <Menu size={24} />
+                    </button>
+
+                    <div className="glass-morphism" style={{
+                        flex: 1,
                         height: '48px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: 'white',
-                        flexShrink: 0
-                    }}
-                >
-                    <Menu size={24} />
-                </button>
+                        padding: '0 4px',
+                        minWidth: 0
+                    }}>
+                        <DestinationSearch
+                            onSelect={(point) => {
+                                setDestination(point);
+                                if (point) setAutoCenter(false);
+                            }}
+                            placeholder={showRouteInputs ? "Para onde?" : "Pesquise no Horizonet"}
+                        />
+                    </div>
 
-                <div className="glass-morphism" style={{
-                    flex: 1,
-                    height: '48px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 4px',
-                    minWidth: 0 // Prevent flex items from overflowing
-                }}>
-                    <DestinationSearch onSelect={(point) => {
-                        setDestination(point);
-                        if (point) setAutoCenter(false);
-                    }} />
+                    <button
+                        onClick={() => setShowRouteInputs(!showRouteInputs)}
+                        className="glass-morphism"
+                        style={{
+                            width: '48px',
+                            height: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: showRouteInputs ? 'var(--primary)' : 'white',
+                            flexShrink: 0
+                        }}
+                    >
+                        <Navigation size={24} />
+                    </button>
                 </div>
+
+                {showRouteInputs && (
+                    <div className="glass-morphism" style={{
+                        height: '48px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0 4px',
+                        marginLeft: '58px', // Align with the main search bar
+                        animation: 'slideDown 0.3s ease-out'
+                    }}>
+                        <DestinationSearch
+                            onSelect={(point) => setOrigin(point)}
+                            placeholder="De onde?"
+                        />
+                    </div>
+                )}
             </header>
 
             {/* Main Map Area */}
             <main style={{ flex: 1, position: 'relative' }} onMouseDown={() => setAutoCenter(false)} onTouchStart={() => setAutoCenter(false)}>
-                <MapWrapper path={path} currentLocation={currentLocation} destination={destination} autoCenter={autoCenter} />
+                <MapWrapper
+                    path={path}
+                    currentLocation={currentLocation}
+                    destination={destination}
+                    origin={origin}
+                    autoCenter={autoCenter}
+                    onRouteFound={setEstimateToDest}
+                />
             </main>
 
             {/* Bottom Floating UI */}
@@ -141,13 +182,17 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Navigation size={14} color="var(--primary)" />
                         <span style={{ fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {estimateToDest ? estimateToDest.dist.toFixed(1) + ' km' : distance.toFixed(1) + ' km'}
+                            {estimateToDest ? estimateToDest.distance.toFixed(1) + ' km' : distance.toFixed(1) + ' km'}
                         </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Clock size={14} color="var(--secondary)" />
-                        <span style={{ fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
-                            {estimateToDest ? formatDuration(estimateToDest.time) : formatDuration(elapsedSeconds)}
+                        <Clock size={14} color="var(--primary)" />
+                        <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>
+                            {estimateToDest
+                                ? (estimateToDest.time > 3600
+                                    ? `${Math.floor(estimateToDest.time / 3600)}h ${Math.floor((estimateToDest.time % 3600) / 60)}m`
+                                    : `${Math.floor(estimateToDest.time / 60)} min`)
+                                : (isTracking ? Math.floor(elapsedSeconds / 60) + ' min' : '--')}
                         </span>
                     </div>
                 </div>

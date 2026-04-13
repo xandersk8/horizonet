@@ -12,9 +12,10 @@ interface SearchResult {
 
 interface DestinationSearchProps {
     onSelect: (point: LocationPoint | null) => void;
+    placeholder?: string;
 }
 
-export default function DestinationSearch({ onSelect }: DestinationSearchProps) {
+export default function DestinationSearch({ onSelect, placeholder = "Pesquise no Horizonet" }: DestinationSearchProps) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -103,7 +104,7 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
                     <>
                         <input
                             type="text"
-                            placeholder="Pesquise no Horizonet"
+                            placeholder={placeholder}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             style={{
