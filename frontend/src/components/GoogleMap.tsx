@@ -12,6 +12,7 @@ interface MapProps {
     origin?: LocationPoint | null;
     theme?: 'light' | 'dark';
     autoCenter?: boolean;
+    travelMode?: string;
     onRouteFound?: (data: { distance: number, time: number }) => void;
 }
 
@@ -20,7 +21,7 @@ const containerStyle = {
     height: '100%'
 };
 
-export default function Map({ path, apiKey, currentLocation, destination, origin, theme, autoCenter = true, onRouteFound }: MapProps) {
+export default function Map({ path, apiKey, currentLocation, destination, origin, theme, autoCenter = true, travelMode, onRouteFound }: MapProps) {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: apiKey
@@ -52,10 +53,18 @@ export default function Map({ path, apiKey, currentLocation, destination, origin
 
             if (org) {
                 const service = new google.maps.DirectionsService();
+                const modeMap: Record<string, google.maps.TravelMode> = {
+                    'DRIVING': google.maps.TravelMode.DRIVING,
+                    'BICYCLING': google.maps.TravelMode.BICYCLING,
+                    'WALKING': google.maps.TravelMode.WALKING,
+                    'TRANSIT': google.maps.TravelMode.TRANSIT,
+                    'MOTORCYCLE': google.maps.TravelMode.DRIVING // Base driving for moto
+                };
+
                 service.route({
                     origin: org,
                     destination: { lat: destination.latitude, lng: destination.longitude },
-                    travelMode: google.maps.TravelMode.DRIVING
+                    travelMode: modeMap[travelMode || 'DRIVING']
                 }, (result, status) => {
                     if (status === 'OK' && result) {
                         setDirections(result);

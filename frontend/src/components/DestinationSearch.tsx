@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, MapPin, X } from 'lucide-react';
+import { Search, MapPin, X, Briefcase, Clock, Home as HomeIcon, Navigation } from 'lucide-react';
 import { LocationPoint } from '@/hooks/useTracker';
 
 interface SearchResult {
     display_name: string;
+    name?: string;
     lat: string;
     lon: string;
+    address?: string;
+    icon?: React.ReactNode;
 }
 
 interface DestinationSearchProps {
@@ -20,6 +23,14 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedName, setSelectedName] = useState('');
+    const [isFocused, setIsFocused] = useState(false);
+
+    const savedPlaces: SearchResult[] = [
+        { name: 'Seu local', address: 'Localização atual', icon: <Navigation size={18} />, lat: '-23.55052', lon: '-46.633308', display_name: 'Seu local' },
+        { name: 'Trabalho', address: 'R. Antônio Aparecido Ferrz, 86...', icon: <Briefcase size={18} />, lat: '-23.55', lon: '-46.64', display_name: 'Trabalho' },
+        { name: 'Casa', address: 'Rua Ernesto Albino Moeckel...', icon: <HomeIcon size={18} />, lat: '-23.56', lon: '-46.65', display_name: 'Casa' },
+        { name: 'Peruíbe', address: 'Peruíbe - SP', icon: <Clock size={18} />, lat: '-24.32', lon: '-46.99', display_name: 'Peruíbe' }
+    ];
 
     // Autocomplete effect with debounce
     useEffect(() => {
@@ -50,9 +61,10 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
             timestamp: new Date().toISOString()
         };
         onSelect(point);
-        setSelectedName(result.display_name);
+        setSelectedName(result.name || result.display_name.split(',')[0]);
         setResults([]);
         setQuery('');
+        setIsFocused(false);
     };
 
     const clear = () => {
@@ -101,6 +113,8 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                         placeholder={placeholder}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                         style={{
                             background: 'none',
                             border: 'none',
@@ -114,7 +128,7 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                 )}
             </div>
 
-            {results.length > 0 && (
+            {isFocused && (query.length === 0 || results.length > 0) && (
                 <div
                     className="glass-morphism animate-slide-down"
                     style={{
@@ -123,14 +137,18 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                         left: '-8px',
                         right: '-8px',
                         zIndex: 2000,
-                        maxHeight: '300px',
+                        maxHeight: '350px',
                         overflowY: 'auto',
                         background: 'rgba(255, 255, 255, 0.98)',
                         padding: '6px',
-                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                        borderRadius: '16px'
                     }}
                 >
-                    {results.map((r, i) => (
+                    {loading ? (
+                        <div style={{ padding: '16px', textAlign: 'center', color: '#64748b', fontSize: '0.9rem' }}>Buscando...</div>
+                    ) : (query.length === 0 ? savedPlaces : results).map((r, i) => (
                         <div
                             key={i}
                             onClick={() => handleSelect(r)}
@@ -142,17 +160,28 @@ export default function DestinationSearch({ onSelect, placeholder = "Pesquise no
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '12px',
-                                borderRadius: '10px',
+                                borderRadius: '12px',
                                 transition: 'all 0.2s'
                             }}
                         >
-                            <Search size={14} color="#94a3b8" />
+                            <div style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                background: query.length === 0 ? 'rgba(99, 102, 241, 0.1)' : 'rgba(148, 163, 184, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: query.length === 0 ? 'var(--primary)' : '#64748b'
+                            }}>
+                                {query.length === 0 ? r.icon : <MapPin size={18} />}
+                            </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontWeight: '500', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {r.display_name.split(',')[0]}
+                                <div style={{ fontWeight: '600', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {query.length === 0 ? r.name : r.display_name.split(',')[0]}
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {r.display_name}
+                                    {query.length === 0 ? r.address : r.display_name}
                                 </div>
                             </div>
                         </div>

@@ -13,18 +13,19 @@ interface MapWrapperProps {
     destination?: LocationPoint | null;
     origin?: LocationPoint | null;
     autoCenter?: boolean;
+    travelMode?: string;
     onRouteFound?: (data: { distance: number, time: number }) => void;
 }
 
-export default function MapWrapper({ path, currentLocation, destination, origin, autoCenter = true, onRouteFound }: MapWrapperProps) {
+export default function MapWrapper({ path, currentLocation, destination, origin, autoCenter = true, travelMode = 'DRIVING', onRouteFound }: MapWrapperProps) {
     const { mapProvider, googleMapsKey, mapTheme } = useSettings();
 
     return (
         <div style={{ height: '100%', width: '100%' }}>
             {mapProvider === 'google' ? (
-                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} destination={destination} origin={origin} theme={mapTheme} autoCenter={autoCenter} onRouteFound={onRouteFound} />
+                <GoogleMap path={path} apiKey={googleMapsKey} currentLocation={currentLocation} destination={destination} origin={origin} theme={mapTheme} autoCenter={autoCenter} travelMode={travelMode} onRouteFound={onRouteFound} />
             ) : (
-                <LeafletMap path={path} currentLocation={currentLocation} destination={destination} origin={origin} theme={mapTheme} autoCenter={autoCenter} onRouteFound={onRouteFound} />
+                <LeafletMap path={path} currentLocation={currentLocation} destination={destination} origin={origin} theme={mapTheme} autoCenter={autoCenter} travelMode={travelMode} onRouteFound={onRouteFound} />
             )}
         </div>
     );

@@ -24,6 +24,7 @@ interface MapProps {
     origin?: LocationPoint | null;
     theme?: 'light' | 'dark';
     autoCenter?: boolean;
+    travelMode?: string;
     onRouteFound?: (data: { distance: number, time: number }) => void;
 }
 
@@ -49,17 +50,28 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
                 L.latLng(destination[0], destination[1])
             ],
             lineOptions: {
-                styles: [{ color: '#6366f1', weight: 6, opacity: 0.8 }],
+                styles: [
+                    { color: '#6366f1', weight: 6, opacity: 0.8 },
+                    { color: '#ffffff', weight: 2, opacity: 1 } // Inner line for better visibility
+                ],
                 extendToWaypoints: true,
                 missingRouteTolerance: 10
             },
-            show: false, // Desabilitar painel de texto
+            show: false,
             addWaypoints: false,
             routeWhileDragging: false,
-            fitSelectedRoutes: false,
+            fitSelectedRoutes: true,
+            autoRoute: true,
             // @ts-ignore
-            createMarker: () => null // Deixa os marcadores originais do componente pai
+            createMarker: () => null
         }).addTo(map);
+
+        // Hide the text instructions container effectively
+        const container = routingControl.getContainer();
+        if (container) {
+            container.style.display = 'none';
+        }
+
 
         routingControl.on('routesfound', (e: any) => {
             const routes = e.routes;
@@ -110,7 +122,7 @@ function ChangeView({ center, destination, autoCenter }: { center: [number, numb
     return null;
 }
 
-export default function LeafletMap({ path, currentLocation, destination, origin, theme = 'light', autoCenter = true, onRouteFound }: MapProps) {
+export default function LeafletMap({ path, currentLocation, destination, origin, theme = 'light', autoCenter = true, travelMode, onRouteFound }: MapProps) {
     const center: [number, number] = path.length > 0
         ? [path[path.length - 1].latitude, path[path.length - 1].longitude]
         : currentLocation
