@@ -36,14 +36,44 @@ const DestIcon = L.icon({
     className: 'destination-marker'
 });
 
-function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number, number], destination: [number, number], onRouteFound?: (data: { distance: number, time: number }) => void }) {
+function RoutingMachine({ origin, destination, travelMode, onRouteFound }: { origin: [number, number], destination: [number, number], travelMode?: string, onRouteFound?: (data: { distance: number, time: number }) => void }) {
     const map = useMap();
     const routingControlRef = useRef<any>(null);
     const [routePath, setRoutePath] = useState<[number, number][]>([]);
+    const [loading, setLoading] = useState(false);
+
+    const GOOGLE_BLUE = '#1a73e8';
+
+    // Manual fetch fallback for OSRM
+    const fetchManualRoute = async (start: [number, number], end: [number, number]) => {
+        try {
+            setLoading(true);
+            const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson`);
+            const data = await response.json();
+
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                const coords = data.routes[0].geometry.coordinates.map((c: any) => [c[1], c[0]]);
+                setRoutePath(coords);
+
+                if (onRouteFound) {
+                    onRouteFound({
+                        distance: data.routes[0].distance / 1000,
+                        time: data.routes[0].duration
+                    });
+                }
+                console.log('Manual OSRM Route fallback successful');
+            }
+        } catch (err) {
+            console.error('Manual OSRM Fetch failed:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (!map) return;
-        setRoutePath([]); // Clear old route
+        setRoutePath([]);
+        setLoading(true);
 
         // @ts-ignore
         const routingControl = L.Routing.control({
@@ -53,8 +83,8 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
             ],
             lineOptions: {
                 styles: [
-                    { color: '#5046e5', weight: 8, opacity: 0.9 }, // Indigo thick line
-                    { color: '#ffffff', weight: 3, opacity: 1 }   // White casing
+                    { color: GOOGLE_BLUE, weight: 8, opacity: 0.9 },
+                    { color: '#ffffff', weight: 2, opacity: 1 }
                 ],
                 extendToWaypoints: true,
                 missingRouteTolerance: 10
@@ -68,22 +98,13 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
             createMarker: () => null
         }).addTo(map);
 
-        // Hide the text instructions container effectively
-        const container = routingControl.getContainer();
-        if (container) {
-            container.style.display = 'none';
-        }
-
-
         routingControl.on('routesfound', (e: any) => {
+            setLoading(false);
             const routes = e.routes;
             const summary = routes[0].summary;
-
-            // Extract coordinates for fallback polyline
             if (routes[0].coordinates) {
                 setRoutePath(routes[0].coordinates.map((c: any) => [c.lat, c.lng]));
             }
-
             if (onRouteFound) {
                 onRouteFound({
                     distance: summary.totalDistance / 1000,
@@ -91,6 +112,15 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
                 });
             }
         });
+
+        routingControl.on('routingerror', (e: any) => {
+            console.warn('Leaflet Routing Machine failed, attempting manual fetch...', e.error);
+            setLoading(false);
+            fetchManualRoute(origin, destination);
+        });
+
+        const container = routingControl.getContainer();
+        if (container) container.style.display = 'none';
 
         routingControlRef.current = routingControl;
 
@@ -105,13 +135,29 @@ function RoutingMachine({ origin, destination, onRouteFound }: { origin: [number
         };
     }, [map, origin, destination]);
 
-    return routePath.length > 0 ? (
+    return (
         <>
-            <Polyline positions={routePath} pathOptions={{ color: '#5046e5', weight: 8, opacity: 0.9 }} />
-            <Polyline positions={routePath} pathOptions={{ color: '#ffffff', weight: 3, opacity: 1 }} />
+            {routePath.length > 0 && (
+                <>
+                    <Polyline
+                        positions={routePath}
+                        pathOptions={{ color: GOOGLE_BLUE, weight: 8, opacity: 0.9 }}
+                    />
+                    <Polyline
+                        positions={routePath}
+                        pathOptions={{ color: '#ffffff', weight: 2, opacity: 1 }}
+                    />
+                </>
+            )}
+            {loading && routePath.length === 0 && (
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 1000, background: 'rgba(255,255,255,0.9)', padding: '10px 20px', borderRadius: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', fontWeight: 'bold', color: '#1a73e8' }}>
+                    Traçando Rota...
+                </div>
+            )}
         </>
-    ) : null;
+    );
 }
+
 
 
 function ChangeView({ center, destination, autoCenter }: { center: [number, number], destination?: [number, number] | null, autoCenter: boolean }) {
@@ -169,8 +215,9 @@ export default function LeafletMap({ path, currentLocation, destination, origin,
                 />
 
                 {originPoint && destPoint && (
-                    <RoutingMachine origin={originPoint} destination={destPoint} onRouteFound={onRouteFound} />
+                    <RoutingMachine origin={originPoint} destination={destPoint} travelMode={travelMode} onRouteFound={onRouteFound} />
                 )}
+
 
                 <Polyline
                     positions={polylinePath}
