@@ -26,9 +26,7 @@ export default function Dashboard() {
     const [showRouteInputs, setShowRouteInputs] = useState(false);
     const router = useRouter();
 
-    // Remove manual calculation as it's now handled by the Map Plugin
     useEffect(() => {
-        // ... (manual effect removed)
     }, [currentLocation, destination, origin]);
 
     useEffect(() => {
@@ -55,94 +53,77 @@ export default function Dashboard() {
     if (!user) return <div className="loading">Carregando...</div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative', overflow: 'hidden', background: '#000' }}>
             <Sidebar
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
                 userEmail={user.email}
             />
 
-            {/* Floating Top Header */}
+            {/* Floating Unified Header */}
             <header style={{
                 position: 'absolute',
-                top: '12px',
-                left: '12px',
-                right: '12px',
+                top: '16px',
+                left: '16px',
+                right: '16px',
                 zIndex: 1000,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
+                maxWidth: '600px',
+                margin: '0 auto'
             }}>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="glass-morphism"
-                        style={{
-                            width: '48px',
-                            height: '48px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'white',
-                            flexShrink: 0
-                        }}
-                    >
-                        <Menu size={24} />
-                    </button>
+                <div className="glass-morphism header-card">
+                    <div className="search-row">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="icon-button"
+                            title="Menu"
+                        >
+                            <Menu size={20} />
+                        </button>
 
-                    <div className="glass-morphism" style={{
-                        flex: 1,
-                        height: '48px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '0 4px',
-                        minWidth: 0
-                    }}>
-                        <DestinationSearch
-                            onSelect={(point) => {
-                                setDestination(point);
-                                if (point) setAutoCenter(false);
-                            }}
-                            placeholder={showRouteInputs ? "Para onde?" : "Pesquise no Horizonet"}
-                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <DestinationSearch
+                                onSelect={(point) => {
+                                    setDestination(point);
+                                    if (point) setAutoCenter(false);
+                                }}
+                                placeholder={showRouteInputs ? "Para onde?" : "Pesquise no Horizonet"}
+                            />
+                        </div>
+
+                        <button
+                            onClick={() => setShowRouteInputs(!showRouteInputs)}
+                            className={`icon-button ${showRouteInputs ? 'active' : ''}`}
+                            title="Planejar Rota"
+                        >
+                            <Navigation size={20} />
+                        </button>
                     </div>
 
-                    <button
-                        onClick={() => setShowRouteInputs(!showRouteInputs)}
-                        className="glass-morphism"
-                        style={{
-                            width: '48px',
-                            height: '48px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: showRouteInputs ? 'var(--primary)' : 'white',
-                            flexShrink: 0
-                        }}
-                    >
-                        <Navigation size={24} />
-                    </button>
+                    {showRouteInputs && (
+                        <div className="search-row animate-slide-down" style={{
+                            paddingLeft: '40px',
+                            paddingRight: '48px',
+                            position: 'relative'
+                        }}>
+                            {/* Decorative line connecting points */}
+                            <div style={{
+                                position: 'absolute',
+                                left: '19px',
+                                top: '-8px',
+                                bottom: '20px',
+                                width: '2px',
+                                background: 'rgba(99, 102, 241, 0.4)',
+                                borderRadius: '10px'
+                            }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <DestinationSearch
+                                    onSelect={(point) => setOrigin(point)}
+                                    placeholder="De onde?"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
-
-                {showRouteInputs && (
-                    <div className="glass-morphism" style={{
-                        height: '48px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '0 4px',
-                        marginLeft: '58px', // Align with the main search bar
-                        animation: 'slideDown 0.3s ease-out'
-                    }}>
-                        <DestinationSearch
-                            onSelect={(point) => setOrigin(point)}
-                            placeholder="De onde?"
-                        />
-                    </div>
-                )}
             </header>
 
             {/* Main Map Area */}
