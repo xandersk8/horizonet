@@ -19,6 +19,8 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 interface MapProps {
     path: LocationPoint[];
+    provider?: string;
+    mapboxKey?: string;
     currentLocation?: LocationPoint | null;
     destination?: LocationPoint | null;
     origin?: LocationPoint | null;
@@ -81,6 +83,9 @@ function RoutingMachine({ origin, destination, travelMode, onRouteFound }: { ori
                 L.latLng(origin[0], origin[1]),
                 L.latLng(destination[0], destination[1])
             ],
+            router: L.Routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1'
+            }),
             lineOptions: {
                 styles: [
                     { color: GOOGLE_BLUE, weight: 8, opacity: 0.9 },
@@ -185,7 +190,7 @@ function ChangeView({ center, destination, autoCenter }: { center: [number, numb
     return null;
 }
 
-export default function LeafletMap({ path, currentLocation, destination, origin, theme = 'light', autoCenter = true, travelMode, onRouteFound }: MapProps) {
+export default function LeafletMap({ path, provider, mapboxKey, currentLocation, destination, origin, theme = 'light', autoCenter = true, travelMode, onRouteFound }: MapProps) {
     const center: [number, number] = path.length > 0
         ? [path[path.length - 1].latitude, path[path.length - 1].longitude]
         : currentLocation
@@ -207,10 +212,12 @@ export default function LeafletMap({ path, currentLocation, destination, origin,
                 zoomControl={false}
             >
                 <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url={theme === 'dark'
-                        ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png"
-                        : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                    attribution={provider === 'mapbox' && mapboxKey ? '© Mapbox © OpenStreetMap' : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'}
+                    url={provider === 'mapbox' && mapboxKey
+                        ? `https://api.mapbox.com/styles/v1/mapbox/${theme === 'dark' ? 'dark-v11' : 'streets-v12'}/tiles/256/{z}/{x}/{y}@2x?access_token=${mapboxKey}`
+                        : theme === 'dark'
+                            ? "https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png"
+                            : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                     }
                 />
 
